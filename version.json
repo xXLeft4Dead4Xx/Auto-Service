@@ -1,4 +1,4 @@
 {
-  "version": "1.1.0",
-  "notes": "Neu: Wartungspunkt „Kraftstofffilter“ (alle 24 Monate / 30.000 km). Bei Diesel wird er automatisch vorgeschlagen. Bei bestehenden Autos: Fahrzeug öffnen → „+ Wartungspunkt“ → Kraftstofffilter wählen."
+  "version": "1.2.0",
+  "notes": "Neu: Marken und Modelle werden erkannt, beim Tippen vorgeschlagen und automatisch korrigiert (z. B. „mercedes c klasse“ → Mercedes / C-Klasse, „Pasat“ → Passat, Marke wird aus dem Modell ergänzt). Außerdem: Kennzeichen, FIN, Reifengröße, Ölsorte und Baujahr werden ins richtige Format gebracht."
 }

@@ -130,6 +130,11 @@ legend{font-size:13px;color:var(--muted);font-weight:700;padding:0 6px}
 .total{display:flex;justify-content:space-between;font-size:18px;font-weight:700;padding:12px 4px;border-top:2px solid var(--line);margin-top:6px}
 .cb{display:flex;align-items:center;gap:10px;padding:8px 2px;cursor:pointer}
 .cb input{width:22px;height:22px;accent-color:var(--acc)}
+.fix{font-size:13px;margin:5px 2px 0;line-height:1.5}
+.fix:empty{display:none}
+.fix .ok{color:var(--ok)}
+.fix .w{color:var(--soon)}
+.fix button{background:none;border:0;color:var(--acc);font-size:13px;font-weight:600;padding:0 4px;cursor:pointer;text-decoration:underline}
 .toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top));transform:translate(-50%,-150%);background:var(--card);border:1px solid var(--line);box-shadow:var(--sh);
   padding:10px 16px;border-radius:12px;z-index:9998;transition:transform .25s;font-size:15px;max-width:90vw}
 .toast.on{transform:translate(-50%,0)}
@@ -742,6 +747,151 @@ function openSheet(title, body, onSave, opts = {}){
 }
 const val = (f, n) => (f.elements[n] ? f.elements[n].value.trim() : '');
 
+/* ---------- Erkennung: Marken, Modelle & Schreibweisen ---------- */
+// name = Standard-Schreibweise, alt = ebenfalls richtige Namen (nur Groß/Klein wird angepasst), alias = Kürzel → name
+const CAR_DB = [
+  {name:'Abarth', models:['500','595','695','124 Spider']},
+  {name:'Alfa Romeo', alias:['alfa'], models:['Giulia','Giulietta','Stelvio','Tonale','Junior','MiTo','147','156','159','Brera','Spider']},
+  {name:'Audi', models:['A1','A2','A3','A4','A5','A6','A7','A8','Q2','Q3','Q4 e-tron','Q5','Q7','Q8','Q8 e-tron','TT','R8','e-tron','e-tron GT','S3','S4','S5','RS3','RS4','RS6']},
+  {name:'BMW', models:['1er','2er','3er','4er','5er','6er','7er','8er','X1','X2','X3','X4','X5','X6','X7','Z3','Z4','i3','i4','i5','i7','iX','iX1','iX3','M2','M3','M4','M5']},
+  {name:'BYD', models:['Atto 3','Dolphin','Seal','Seal U','Han','Tang']},
+  {name:'Citroën', alias:['citroen'], models:['C1','C2','C3','C3 Aircross','C4','C4 Picasso','C4 Cactus','C5','C5 Aircross','C5 X','Berlingo','Jumpy','Jumper','SpaceTourer','Ami','Saxo','Xsara']},
+  {name:'Cupra', models:['Born','Formentor','Leon','Ateca','Tavascan']},
+  {name:'Dacia', models:['Sandero','Logan','Duster','Jogger','Spring','Lodgy','Dokker','Bigster']},
+  {name:'Fiat', models:['500','500X','500L','600','Panda','Punto','Grande Punto','Tipo','Bravo','Doblò','Qubo','Multipla','Fiorino','Scudo','Talento','Ducato']},
+  {name:'Ford', models:['Ka','Fiesta','Focus','Mondeo','Puma','EcoSport','Kuga','Edge','Explorer','B-Max','C-Max','S-Max','Galaxy','Ranger','Mustang','Mustang Mach-E','Transit','Transit Custom','Transit Connect','Transit Courier','Tourneo Connect','Tourneo Custom','Tourneo Courier']},
+  {name:'Honda', models:['Jazz','Civic','Accord','CR-V','HR-V','ZR-V','FR-V','e']},
+  {name:'Hyundai', models:['i10','i20','i30','i40','ix20','ix35','Getz','Bayon','Kona','Tucson','Santa Fe','Ioniq','Ioniq 5','Ioniq 6','H-1','Staria']},
+  {name:'Iveco', models:['Daily']},
+  {name:'Jaguar', models:['XE','XF','XJ','E-Pace','F-Pace','I-Pace','F-Type']},
+  {name:'Jeep', models:['Avenger','Renegade','Compass','Cherokee','Grand Cherokee','Wrangler']},
+  {name:'Kia', models:['Picanto','Rio','Ceed','ProCeed','XCeed','Stonic','Venga','Soul','Niro','Sportage','Sorento','Carens','Optima','EV3','EV6','EV9']},
+  {name:'Land Rover', models:['Defender','Discovery','Discovery Sport','Freelander','Range Rover','Range Rover Sport','Range Rover Evoque','Range Rover Velar']},
+  {name:'Lexus', models:['CT','IS','ES','LBX','UX','NX','RX']},
+  {name:'Mazda', models:['Mazda2','Mazda3','Mazda5','Mazda6','CX-3','CX-30','CX-5','CX-60','MX-5','MX-30']},
+  {name:'Mercedes-Benz', alt:['Mercedes'], alias:['mb','merc','benz','daimler'], models:['A-Klasse','B-Klasse','C-Klasse','E-Klasse','S-Klasse','G-Klasse','V-Klasse','CLA','CLK','CLS','GLA','GLB','GLC','GLE','GLK','GLS','ML','SLK','SL','EQA','EQB','EQC','EQE','EQS','EQV','Citan','Vito','Viano','Sprinter','Marco Polo','T-Klasse']},
+  {name:'MG', models:['MG3','MG4','MG5','ZS','HS','Marvel R','Cyberster']},
+  {name:'Mini', models:['Cooper','One','Clubman','Countryman','Paceman','Cabrio','Aceman']},
+  {name:'Mitsubishi', models:['Space Star','Colt','ASX','Eclipse Cross','Outlander','Pajero','L200']},
+  {name:'Nissan', models:['Micra','Note','Juke','Qashqai','X-Trail','Pulsar','Leaf','Ariya','Navara','NV200','Primastar','Townstar']},
+  {name:'Opel', models:['Adam','Karl','Agila','Corsa','Astra','Vectra','Insignia','Omega','Meriva','Zafira','Mokka','Crossland','Grandland','Frontera','Combo','Vivaro','Movano','Tigra']},
+  {name:'Peugeot', models:['106','107','108','206','207','208','2008','306','307','308','3008','407','408','508','5008','Partner','Rifter','Expert','Traveller','Boxer']},
+  {name:'Polestar', models:['Polestar 2','Polestar 3','Polestar 4']},
+  {name:'Porsche', models:['911','718','Boxster','Cayman','Cayenne','Macan','Panamera','Taycan']},
+  {name:'Renault', models:['Twingo','Clio','Captur','Mégane','Scénic','Kadjar','Austral','Arkana','Koleos','Espace','Laguna','Zoe','Kangoo','Trafic','Master']},
+  {name:'Seat', models:['Mii','Ibiza','Leon','Arona','Ateca','Tarraco','Altea','Toledo','Alhambra']},
+  {name:'Škoda', alt:['Skoda'], models:['Citigo','Fabia','Scala','Rapid','Octavia','Superb','Kamiq','Karoq','Kodiaq','Yeti','Roomster','Enyaq','Elroq']},
+  {name:'Smart', models:['fortwo','forfour','#1','#3']},
+  {name:'Subaru', models:['Impreza','XV','Crosstrek','Forester','Outback','Legacy','Solterra']},
+  {name:'Suzuki', models:['Alto','Celerio','Splash','Swift','Baleno','Ignis','SX4','S-Cross','Vitara','Jimny']},
+  {name:'Tesla', models:['Model 3','Model Y','Model S','Model X']},
+  {name:'Toyota', models:['Aygo','Aygo X','Yaris','Yaris Cross','Auris','Corolla','Avensis','Verso','Prius','C-HR','RAV4','Land Cruiser','Hilux','Proace','Proace City','bZ4X','GR86','Supra']},
+  {name:'Volvo', models:['V40','V50','V60','V70','V90','S40','S60','S90','XC40','XC60','XC70','XC90','C30','C40','EX30','EX90']},
+  {name:'VW', alt:['Volkswagen'], models:['Up','Lupo','Fox','Polo','Golf','Golf Plus','Golf Sportsvan','Jetta','Bora','Vento','Passat','Arteon','Scirocco','Corrado','Beetle','Käfer','Eos','Phaeton',
+    'T-Cross','T-Roc','Taigo','Tiguan','Tiguan Allspace','Touran','Sharan','Touareg','Caddy','Transporter','T3','T4','T5','T6','T6.1','T7','Multivan','California','Caravelle','Crafter','Amarok',
+    'ID.3','ID.4','ID.5','ID.7','ID. Buzz']}
+];
+// Typische Zusätze im Modellnamen in richtiger Schreibweise
+const CAR_TOKENS = ['TSI','TFSI','TDI','GTI','GTD','GTE','eTSI','eHybrid','4MOTION','quattro','xDrive','sDrive','CDI','BlueTEC','HDi','BlueHDi','PureTech','dCi','TCe','CRDi','T-GDI','TDCi','EcoBoost','CDTI','AMG','Variant','Avant','Touring','Kombi','Limousine','Cabrio','Coupé','Hybrid','Plug-in'];
+const ckey = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[\s\-.]/g, '');
+function osaDist(a, b){   // Tippfehler-Abstand (Buchstabendreher zählt als 1 Fehler)
+  const d = Array.from({length:a.length + 1}, (_, i) => [i, ...Array(b.length).fill(0)]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++){
+    const c = a[i-1] === b[j-1] ? 0 : 1;
+    d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + c);
+    if (i > 1 && j > 1 && a[i-1] === b[j-2] && a[i-2] === b[j-1]) d[i][j] = Math.min(d[i][j], d[i-2][j-2] + 1);
+  }
+  return d[a.length][b.length];
+}
+function fuzzy(input, list){   // list: [{k, v, ...}] → bester Treffer oder null
+  const k = ckey(input); if (!k) return null;
+  const lc = String(input).trim().toLowerCase();
+  const ex = list.find(x => x.v.toLowerCase() === lc) || list.find(x => x.k === k); if (ex) return Object.assign({exact:true}, ex);
+  if (k.length < 4) return null;
+  const max = k.length >= 7 ? 2 : 1; let best = null, bd = 99, tie = false;
+  for (const x of list){ if (Math.abs(x.k.length - k.length) > max) continue; const dd = osaDist(k, x.k);
+    if (dd < bd){ bd = dd; best = x; tie = false; } else if (dd === bd && best && best.v !== x.v) tie = true; }
+  return best && bd <= max && !tie ? Object.assign({exact:false}, best) : null;
+}
+const MAKE_IDX = CAR_DB.flatMap(m => [{k:ckey(m.name), v:m.name, m}, ...(m.alt || []).map(a => ({k:ckey(a), v:a, m})), ...(m.alias || []).map(a => ({k:ckey(a), v:m.name, m}))]);
+const findMake = s => fuzzy(s, MAKE_IDX);
+function fixCase(t){ const hit = CAR_TOKENS.find(x => x.toLowerCase() === t.toLowerCase()); return hit || t; }
+function fixMake(s){
+  const r = findMake(s); if (!r) return {value:s};
+  return {value:r.v, m:r.m, msg:r.v === s ? '' : (r.exact ? `Erkannt: ${r.v}` : `Korrigiert: „${s}“ → ${r.v}`)};
+}
+// Modell innerhalb einer Marke suchen; die ersten 1–4 Wörter werden geprüft, der Rest (z. B. „7 1.4 TSI“) bleibt erhalten
+function matchModel(tokens, models, allowFuzzy){
+  const list = models.map(x => ({k:ckey(x), v:x}));
+  // 1. exakte Treffer (längster zuerst, z. B. „Range Rover Evoque“ vor „Range Rover“)
+  for (let n = Math.min(4, tokens.length); n >= 1; n--){
+    const hit = list.find(x => x.k === ckey(tokens.slice(0, n).join(' ')));
+    if (hit) return {model:hit.v, n, exact:true};
+  }
+  if (!allowFuzzy) return null;
+  // 2. Tippfehler: zwei Wörter nur bei mehrteiligen Modellnamen, sonst nur das erste Wort
+  if (tokens.length >= 2){ const r = fuzzy(tokens.slice(0, 2).join(' '), list.filter(x => /[\s-]/.test(x.v))); if (r) return {model:r.v, n:2, exact:false}; }
+  const r = fuzzy(tokens[0], list);
+  return r ? {model:r.v, n:1, exact:false} : null;
+}
+function fixModel(s, makeStr){
+  const tokens = String(s || '').trim().split(/\s+/).filter(Boolean); if (!tokens.length) return {value:s};
+  const mk = findMake(makeStr);
+  const build = hit => [hit.model, ...tokens.slice(hit.n).map(fixCase)].join(' ');
+  if (mk){
+    const hit = matchModel(tokens, mk.m.models, true);
+    if (hit){ const value = build(hit); return {value, model:hit.model, msg:value === s ? '' : (hit.exact ? `Erkannt: ${hit.model}` : `Korrigiert: „${tokens.slice(0, hit.n).join(' ')}“ → ${hit.model}`)}; }
+  }
+  // Marke leer oder Modell passt nicht → in allen Marken suchen (nur eindeutige, exakte Treffer)
+  let hits = CAR_DB.map(m => ({m, hit:matchModel(tokens, m.models, false)})).filter(x => x.hit);
+  if (!hits.length && ckey(tokens[0]).length >= 5)       // mit Tippfehler nur bei längeren Namen
+    hits = CAR_DB.map(m => ({m, hit:matchModel(tokens, m.models, true)})).filter(x => x.hit);
+  const best = hits.length ? Math.max(...hits.map(x => x.hit.n)) : 0;
+  const top = hits.filter(x => x.hit.n === best);
+  if (top.length === 1){
+    const {m, hit} = top[0], value = build(hit);
+    if (!mk) return {value, model:hit.model, make:m.name, msg:`Erkannt: ${hit.model} → Marke ${m.name} ergänzt`};
+    if (mk.m !== m) return {value:s, otherMake:m.name, model:hit.model, msg:`„${hit.model}“ gibt es bei ${m.name}, nicht bei ${mk.m.name}.`};
+  }
+  const value = tokens.map(fixCase).join(' ');
+  return {value, msg:''};
+}
+function fixPlate(s){
+  const u = String(s || '').toUpperCase().trim().replace(/\s+/g, ' ');
+  const m = u.match(/^([A-ZÄÖÜ]{1,3})[\s-]+([A-Z]{1,2})[\s-]*(\d{1,4})\s*([EH]?)$/);
+  const value = m ? `${m[1]}-${m[2]} ${m[3]}${m[4]}` : u;
+  return {value, msg:value !== u ? `Format angepasst: ${value}` : ''};
+}
+function fixYear(s){
+  const t = String(s || '').trim(); if (!t) return {value:t};
+  const now = new Date().getFullYear();
+  if (/^\d{2}$/.test(t)){ const y = +t + (+t <= (now % 100) + 1 ? 2000 : 1900); return {value:String(y), msg:`Ergänzt: ${y}`}; }
+  if (!/^\d{4}$/.test(t) || +t < 1900 || +t > now + 1) return {value:t, warn:`Baujahr bitte prüfen (1900–${now + 1})`};
+  return {value:t};
+}
+function fixVin(s){
+  const raw = String(s || ''), u = raw.toUpperCase().replace(/[\s-]/g, '');
+  if (!u) return {value:''};
+  const value = u.replace(/O/g, '0').replace(/Q/g, '0').replace(/I/g, '1');   // I, O, Q kommen in einer FIN nie vor
+  const msg = value !== u ? 'Korrigiert: I/O/Q gibt es in der FIN nicht → 1/0' : '';
+  return {value, msg, warn:value.length !== 17 ? `Eine FIN hat 17 Zeichen (jetzt ${value.length})` : ''};
+}
+function fixTires(s){
+  const raw = String(s || '').trim(); if (!raw) return {value:raw};
+  let u = raw.toUpperCase().replace(/\s+/g, ''), xl = '';
+  if (/XL$/.test(u)){ xl = ' XL'; u = u.slice(0, -2); }
+  const m = u.match(/^(\d{3})\/?(\d{2})(Z?R)?(\d{2})(\d{2,3})?([A-Z]{1,2})?$/);
+  if (!m) return {value:raw};
+  const value = `${m[1]}/${m[2]} ${m[3] || 'R'}${m[4]}${m[5] || m[6] ? ' ' + (m[5] || '') + (m[6] || '') : ''}${xl}`;
+  return {value, msg:value === raw ? '' : `Format angepasst: ${value}`};
+}
+function fixOil(s){
+  const raw = String(s || ''); const value = raw.replace(/\b(\d{1,2})\s*w\s*-?\s*(\d{2})\b/gi, '$1W-$2');
+  return {value, msg:value === raw ? '' : `Viskosität angepasst: ${(value.match(/\d{1,2}W-\d{2}/) || [''])[0]}`};
+}
+function fixUpper(s){ return {value:String(s || '').toUpperCase().trim()}; }
+
 /* ---------- Fahrzeug anlegen / bearbeiten ---------- */
 function editVehicle(id){
   const v = id ? vehicle(id) : {};
@@ -751,8 +901,9 @@ function editVehicle(id){
     </fieldset>` : '';
   openSheet(isNew ? 'Neues Fahrzeug' : 'Fahrzeug bearbeiten', `
     <div class="f"><label>Name *</label><input name="name" value="${E(v.name)}" placeholder="z. B. Golf, Bulli, Mamas Auto" autocomplete="off"></div>
-    <div class="f2"><div class="f"><label>Marke</label><input name="make" value="${E(v.make)}" placeholder="VW"></div>
-      <div class="f"><label>Modell</label><input name="model" value="${E(v.model)}" placeholder="Golf 7 1.4 TSI"></div></div>
+    <div class="f2"><div class="f"><label>Marke</label><input name="make" value="${E(v.make)}" placeholder="VW" list="dlMakes" autocomplete="off"></div>
+      <div class="f"><label>Modell</label><input name="model" value="${E(v.model)}" placeholder="Golf 7 1.4 TSI" list="dlModels" autocomplete="off"></div></div>
+    <datalist id="dlMakes">${MAKE_IDX.filter(x => x.v === x.m.name || (x.m.alt || []).includes(x.v)).map(x => `<option value="${E(x.v)}">`).join('')}</datalist><datalist id="dlModels"></datalist>
     <div class="f2"><div class="f"><label>Kennzeichen</label><input name="plate" value="${E(v.plate)}" placeholder="AB-CD 123" autocapitalize="characters"></div>
       <div class="f"><label>Baujahr</label><input name="year" value="${E(v.year)}" inputmode="numeric" placeholder="2016"></div></div>
     <div class="f2"><div class="f"><label>Kraftstoff</label><select name="fuel"><option value="">–</option>${FUELS.map(f => `<option ${v.fuel === f ? 'selected' : ''}>${f}</option>`).join('')}</select></div>
@@ -767,6 +918,7 @@ function editVehicle(id){
     ${tpl}
     <div class="f"><label>Notizen</label><textarea name="notes">${E(v.notes)}</textarea></div>`,
   f => {
+    if (f._fixAll) f._fixAll();          // Erkennung auch ohne Verlassen des Feldes anwenden
     const name = val(f, 'name');
     if (!name){ toast('Bitte einen Namen eingeben'); f.elements.name.focus(); return false; }
     const data = {name, make:val(f,'make'), model:val(f,'model'), plate:val(f,'plate').toUpperCase(), year:val(f,'year'), fuel:val(f,'fuel'),
@@ -784,6 +936,36 @@ function editVehicle(id){
       Object.assign(v, data); save(); toast('Gespeichert');
     }
   }, {onMount:f => {
+    // Marke/Modell erkennen, ergänzen und korrigieren (+ Kennzeichen, FIN, Reifen, Öl, Baujahr)
+    const FIX = {make:x => fixMake(x), model:x => fixModel(x, f.elements.make.value), plate:fixPlate, year:fixYear, vin:fixVin, tires:fixTires, oil:fixOil, tsn:fixUpper, engine:fixUpper};
+    const hintEl = n => { const inp = f.elements[n]; let h = inp.parentNode.querySelector('.fix');
+      if (!h){ h = document.createElement('div'); h.className = 'fix'; inp.after(h); } return h; };
+    const updModels = () => { const mk = findMake(f.elements.make.value);
+      f.querySelector('#dlModels').innerHTML = mk ? mk.m.models.map(m => `<option value="${E(m)}">`).join('') : ''; };
+    function runFix(n, silent){
+      const inp = f.elements[n]; if (!inp) return;
+      const before = inp.value;
+      if (!before.trim() || inp.dataset.nofix === before){ if (!silent) hintEl(n).innerHTML = ''; return; }
+      if (!silent && inp.dataset.done === before) return;     // schon geprüft – Hinweis stehen lassen
+      const r = FIX[n](before);
+      if (r.value !== before) inp.value = r.value;
+      if (n === 'model' && r.make && !f.elements.make.value.trim()){ f.elements.make.value = r.make; updModels(); }
+      if (n === 'model' && r.model && !f.elements.name.value.trim()) f.elements.name.value = r.model;
+      if (silent) return;
+      inp.dataset.done = inp.value;
+      const h = hintEl(n); h.innerHTML = '';
+      if (r.msg){ h.innerHTML = `<span class="${r.otherMake ? 'w' : 'ok'}">${r.otherMake ? '⚠︎' : '✓'} ${E(r.msg)}</span>`; }
+      if (r.value !== before){ const b = document.createElement('button'); b.type = 'button'; b.textContent = 'Rückgängig';
+        b.onclick = () => { inp.value = before; inp.dataset.nofix = before; h.innerHTML = ''; if (n === 'make') updModels(); }; h.append(' ', b); }
+      if (r.otherMake){ const b = document.createElement('button'); b.type = 'button'; b.textContent = `Marke auf ${r.otherMake} ändern`;
+        b.onclick = () => { f.elements.make.value = r.otherMake; f.elements.make.dataset.done = ''; runFix('make'); }; h.append(' ', b); }
+      if (r.warn) h.insertAdjacentHTML('beforeend', `<span class="w">${r.msg ? '<br>' : ''}⚠︎ ${E(r.warn)}</span>`);
+      if (n === 'make'){ updModels(); f.elements.model.dataset.done = ''; if (f.elements.model.value.trim()) runFix('model'); }
+    }
+    Object.keys(FIX).forEach(n => f.elements[n] && f.elements[n].addEventListener('change', () => runFix(n)));
+    f.elements.make.addEventListener('input', updModels);
+    f._fixAll = () => Object.keys(FIX).forEach(n => runFix(n, true));
+    updModels();
     // Diesel gewählt → Kraftstofffilter automatisch mit in den Wartungsplan
     if (!isNew) return;
     f.elements.fuel.addEventListener('change', () => {
@@ -1048,7 +1230,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 </div>
 <script>
 (function(){
-  var APP_VERSION = '1.1.0';   // bei jeder Änderung erhöhen – und in version.json gleich setzen
+  var APP_VERSION = '1.2.0';   // bei jeder Änderung erhöhen – und in version.json gleich setzen
   window.AS_VERSION = APP_VERSION;
   var m = document.getElementById('updMsg'); if (m) m.textContent = APP_VERSION;
   var box = document.getElementById('upd');

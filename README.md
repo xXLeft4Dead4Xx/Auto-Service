@@ -4,6 +4,7 @@ Web-App für alle Wartungen deiner Autos – mit Teilen, Artikelnummern, Preisen
 
 ## Funktionen
 - **Fahrzeuge** mit Kennzeichen, FIN, HSN/TSN, Motorcode, Öl-Spezifikation und Reifengröße
+- **Erkennung** von Marke und Modell (ca. 40 Marken offline): Vorschläge beim Tippen, Tippfehler- und Schreibweisen-Korrektur, Marke wird aus dem Modell ergänzt; Kennzeichen, FIN, Reifengröße, Ölviskosität und Baujahr werden ins richtige Format gebracht (jeweils mit „Rückgängig“)
 - **Services** mit Datum, km-Stand, Werkstatt, beliebig vielen Teilen (Bezeichnung, Hersteller, Artikelnummer, Menge, Einheit, Preis), Arbeitslohn und Sonstigem – die Summe wird automatisch berechnet
 - Bekannte Teile werden vorgeschlagen und füllen Artikelnummer und letzten Preis automatisch aus; „Als Vorlage“ kopiert einen alten Service
 - **Wartungsplan** pro Fahrzeug (Ölwechsel, Inspektion, HU/TÜV …) mit Intervall nach Monaten und/oder km

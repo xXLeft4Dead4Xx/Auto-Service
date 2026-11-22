@@ -1,4 +1,4 @@
 {
-  "version": "1.2.0",
-  "notes": "Neu: Marken und Modelle werden erkannt, beim Tippen vorgeschlagen und automatisch korrigiert (z. B. „mercedes c klasse“ → Mercedes / C-Klasse, „Pasat“ → Passat, Marke wird aus dem Modell ergänzt). Außerdem: Kennzeichen, FIN, Reifengröße, Ölsorte und Baujahr werden ins richtige Format gebracht."
+  "version": "1.3.0",
+  "notes": "Neu: Herstellerwerte für die Wartungsintervalle von über 500 Modellen (aus Internet-Recherche, mit Quelle). Beim Anlegen werden sie vorgeschlagen, bei vorhandenen Autos gibt es den Knopf „Herstellerwerte übernehmen“. Allgemeine Vorlagen sind als Richtwert gekennzeichnet."
 }

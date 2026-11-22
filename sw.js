@@ -2,7 +2,7 @@
 // Die App läuft immer aus dem Cache (auch offline).
 // Neue Versionen werden erst geladen, wenn du in der App auf „App aktualisieren“ tippst.
 const CACHE = 'auto-service-app';
-const CORE = ['./', './index.html', './manifest.webmanifest', './apple-touch-icon.png', './icon-192.png', './icon-512.png'];
+const CORE = ['./', './index.html', './manifest.webmanifest', './apple-touch-icon.png', './icon-192.png', './icon-512.png', './intervalle.json'];
 
 async function fetchAll() {
   const res = await Promise.all(CORE.map(u => fetch(u, {cache: 'reload'})));

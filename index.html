@@ -470,6 +470,7 @@ function bindMain(){
       'ics-plan': () => exportICS([plan(id)], 'Erinnerung-' + plan(id).name),
       'ics-vehicle': () => exportICS(vPlans(id), 'Wartungen-' + vehicle(id).name),
       'ics-all': () => exportICS(db.plans, 'Auto-Service-Termine'),
+      'take-model': () => takeModelData(id),
       'svc-filter': () => go({serviceFilter:id}),
       'cost-filter': () => go({costVehicle:id}),
       'copy': () => copyText(el.dataset.text),
@@ -559,12 +560,13 @@ function renderVehicle(v){
       <span class="dot" style="background:${STATUS_COL[x.st.status]}"></span>
       <div class="grow"><div class="row"><b class="grow ellip">${E(x.p.name)}</b><span class="pill st-${x.st.status}">${STATUS_TXT[x.st.status]}</span></div>
         <div class="small muted">${x.st.status === 'unknown' ? 'Noch kein Service – tippen, um den letzten Termin einzutragen' : 'Fällig: ' + E(dueText(x.st)) + ' · ' + E(leftText(x.st))}</div>
-        <div class="small muted">Intervall: ${[x.p.months ? x.p.months + ' Monate' : '', num(x.p.km) ? km(x.p.km) : ''].filter(Boolean).join(' / ') || '–'} · Erinnerung ${x.st.remindDays} ${plural(x.st.remindDays,'Tag','Tage')} vorher${x.st.remindDate && x.st.status !== 'unknown' ? ' (' + dt(x.st.remindDate) + ')' : ''}</div>
+        <div class="small muted">Intervall: ${[x.p.months ? x.p.months + ' Monate' : '', num(x.p.km) ? km(x.p.km) : ''].filter(Boolean).join(' / ') || '–'}${x.p.src ? ' (Hersteller)' : ''} · Erinnerung ${x.st.remindDays} ${plural(x.st.remindDays,'Tag','Tage')} vorher${x.st.remindDate && x.st.status !== 'unknown' ? ' (' + dt(x.st.remindDate) + ')' : ''}</div>
         ${x.st.status !== 'unknown' ? `<div class="bar"><i style="width:${Math.round(x.st.prog*100)}%;background:${STATUS_COL[x.st.status]}"></i></div>` : ''}</div>
       <button class="btn sm" data-act="ics-plan" data-id="${x.p.id}" title="In Kalender" ${x.st.eff ? '' : 'disabled'}>📅</button></div>`).join('')}</div>`
     : `<p class="muted small">Noch keine Wartungspunkte.</p>`;
   h += `<div class="btns"><button class="btn sm" data-act="add-plan" data-id="${v.id}">+ Wartungspunkt</button>
-    <button class="btn sm" data-act="ics-vehicle" data-id="${v.id}">📅 Alle in Kalender</button></div></div>`;
+    <button class="btn sm" data-act="ics-vehicle" data-id="${v.id}">📅 Alle in Kalender</button>
+    ${vData(v) ? `<button class="btn sm" data-act="take-model" data-id="${v.id}">🔧 Herstellerwerte für ${E(vData(v).model)}</button>` : ''}</div></div>`;
 
   h += `<h2>Service-Historie · ${eur(total)}</h2>`;
   h += svcs.length ? `<div class="card list">${svcs.map(serviceRow).join('')}</div>` :
@@ -892,13 +894,47 @@ function fixOil(s){
 }
 function fixUpper(s){ return {value:String(s || '').toUpperCase().trim()}; }
 
+/* ---------- Herstellerintervalle je Modell (intervalle.json, aus Internet-Recherche) ---------- */
+let INTERVALS = {};
+fetch('intervalle.json').then(r => r.ok ? r.json() : []).then(list => {
+  (Array.isArray(list) ? list : []).forEach(e => { if (e && e.make && e.model) INTERVALS[e.make + '|' + e.model] = e; });
+  if (view.vehicleId) render();
+}).catch(() => {});
+function modelData(makeStr, modelStr){
+  const mk = findMake(makeStr); if (!mk) return null;
+  const tokens = String(modelStr || '').trim().split(/\s+/).filter(Boolean); if (!tokens.length) return null;
+  const hit = matchModel(tokens, mk.m.models, true); if (!hit) return null;
+  const d = INTERVALS[mk.m.name + '|' + hit.model];
+  return d && d.items && Object.values(d.items).some(it => it && (it.months || it.km || it.chain || it.none)) ? d : null;
+}
+const vData = v => v ? modelData(v.make, v.model) : null;
+// Intervall für einen Wartungspunkt: Herstellerwert des Modells, sonst allgemeiner Richtwert
+function tplFor(name, data){
+  const t = TEMPLATES.find(x => x.name === name), it = data && data.items ? data.items[name] : null;
+  const src = data ? {url:data.source || '', gen:data.gen || data.model, conf:data.confidence || '', note:(it && it.note) || ''} : null;
+  if (it && (it.months || it.km)) return {name, months:it.months || '', km:it.km || '', from:'model', src};
+  if (it && (it.chain || it.none)) return {name, months:'', km:'', skip:true, note:it.note || (it.chain ? 'Steuerkette' : 'laut Hersteller wartungsfrei'), from:'model', src};
+  return t ? {name, months:t.months || '', km:t.km || '', from:'generic'} : null;
+}
+const ivTxt = (m, k) => [m ? m + ' Mon.' : '', num(k) ? km(k) : ''].filter(Boolean).join(' / ') || '–';
+function srcLink(src){
+  if (!src || !src.url) return '';
+  const u = src.url.split(' | ')[0]; let host = u; try { host = new URL(u).hostname.replace(/^www\./, ''); } catch(e){}
+  return `<a href="${E(u)}" target="_blank" rel="noopener">${E(host)}</a>`;
+}
+
 /* ---------- Fahrzeug anlegen / bearbeiten ---------- */
 function editVehicle(id){
   const v = id ? vehicle(id) : {};
   const isNew = !id;
-  const tpl = isNew ? `<fieldset><legend>Wartungsplan (kannst du später anpassen)</legend>
-      ${TEMPLATES.map((t, i) => `<label class="cb"><input type="checkbox" name="tpl" value="${i}" ${t.def ? 'checked' : ''}><span class="grow">${E(t.name)}</span><span class="small muted">${[t.months ? t.months + ' Mon.' : '', t.km ? km(t.km) : ''].filter(Boolean).join(' / ')}</span></label>`).join('')}
-    </fieldset>` : '';
+  const tpl = isNew ? `<fieldset id="tplBox"></fieldset>` : '';
+  const tplHTML = (data, checked) => `<legend>Wartungsplan (kannst du später anpassen)</legend>
+    <p class="small muted" style="margin:0 2px 6px">${data ? `✓ Herstellerwerte für <b>${E(data.gen || data.model)}</b> gefunden${data.source ? ' · Quelle: ' + srcLink({url:data.source}) : ''}. Andere Punkte sind Richtwerte.` :
+      'Richtwerte – bitte mit dem Serviceheft abgleichen. Gib Marke und Modell ein, dann werden Herstellerwerte vorgeschlagen.'}</p>
+    ${TEMPLATES.map((t, i) => { const x = tplFor(t.name, data);
+      const on = x.skip ? false : (checked ? checked.has(t.name) : t.def);
+      return `<label class="cb"><input type="checkbox" name="tpl" value="${i}" ${on ? 'checked' : ''}><span class="grow">${E(t.name)}${x.from === 'model' ? ' <span class="pill st-ok" style="font-size:10px">Hersteller</span>' : ''}</span>
+        <span class="small muted right">${x.skip ? E(x.note) : ivTxt(x.months, x.km)}</span></label>`; }).join('')}`;
   openSheet(isNew ? 'Neues Fahrzeug' : 'Fahrzeug bearbeiten', `
     <div class="f"><label>Name *</label><input name="name" value="${E(v.name)}" placeholder="z. B. Golf, Bulli, Mamas Auto" autocomplete="off"></div>
     <div class="f2"><div class="f"><label>Marke</label><input name="make" value="${E(v.make)}" placeholder="VW" list="dlMakes" autocomplete="off"></div>
@@ -927,8 +963,10 @@ function editVehicle(id){
       const nv = Object.assign({id:uid(), color:COLORS[db.vehicles.length % COLORS.length], kmLog:[], created:todayISO()}, data);
       const k = num(val(f, 'km')); if (k != null) nv.kmLog.push({date:todayISO(), km:k});
       db.vehicles.push(nv);
-      [...f.querySelectorAll('input[name=tpl]:checked')].forEach(cb => { const t = TEMPLATES[+cb.value];
-        db.plans.push({id:uid(), vehicleId:nv.id, name:t.name, months:t.months || '', km:t.km || '', remindDays:'', lastDate:'', lastKm:null, dueOverride:'', notes:''}); });
+      const md = modelData(data.make, data.model);
+      [...f.querySelectorAll('input[name=tpl]:checked')].forEach(cb => { const x = tplFor(TEMPLATES[+cb.value].name, md);
+        if (!x.months && !x.km) return;
+        db.plans.push({id:uid(), vehicleId:nv.id, name:x.name, months:x.months, km:x.km, remindDays:'', lastDate:'', lastKm:null, dueOverride:'', notes:'', src:x.from === 'model' ? x.src : null}); });
       view.tab = 'home'; view.vehicleId = nv.id;
       save(); toast('Fahrzeug angelegt');
     } else {
@@ -968,10 +1006,38 @@ function editVehicle(id){
     updModels();
     // Diesel gewählt → Kraftstofffilter automatisch mit in den Wartungsplan
     if (!isNew) return;
+    const box = f.querySelector('#tplBox'); let lastKey = null;
+    const drawTpl = () => { const d = modelData(f.elements.make.value, f.elements.model.value), key = d ? d.make + '|' + d.model : '';
+      if (key === lastKey) return; const had = lastKey !== null;
+      lastKey = key; const checked = had ? new Set([...box.querySelectorAll('input[name=tpl]:checked')].map(cb => TEMPLATES[+cb.value].name)) : null;
+      box.innerHTML = tplHTML(d, checked); };
+    drawTpl();
+    ['make', 'model'].forEach(n => f.elements[n].addEventListener('change', () => setTimeout(drawTpl, 0)));
     f.elements.fuel.addEventListener('change', () => {
       TEMPLATES.forEach((t, i) => { if (t.diesel){ const cb = f.querySelector(`input[name=tpl][value="${i}"]`); if (cb) cb.checked = f.elements.fuel.value === 'Diesel' || cb.checked; } });
     });
   }});
+}
+function takeModelData(id){
+  const v = vehicle(id), d = vData(v); if (!d) return;
+  const rows = TEMPLATES.map(t => ({t, x:tplFor(t.name, d), p:vPlans(id).find(p => p.name.toLowerCase() === t.name.toLowerCase())}))
+    .filter(r => r.x.from === 'model');
+  const body = `<p class="small muted" style="margin-top:0">Gefundene Werte für <b>${E(d.gen || d.model)}</b>${d.confidence ? ' (Verlässlichkeit: ' + E(d.confidence) + ')' : ''}. Quelle: ${srcLink({url:d.source})}<br>
+    Bei Unterschieden je Motor steht ein Hinweis dabei – im Zweifel gilt dein Serviceheft.</p>
+    <div class="card list">${rows.map((r, i) => { const same = r.p && String(r.p.months) === String(r.x.months) && String(r.p.km) === String(r.x.km);
+      return `<label class="item cb" style="align-items:flex-start"><input type="checkbox" name="row" value="${i}" ${r.x.skip || same ? 'disabled' : r.p ? 'checked' : ''}>
+        <div class="grow"><b>${E(r.t.name)}</b>${r.p || r.x.skip ? '' : ' <span class="small muted">(neu)</span>'}
+          <div class="small">${r.x.skip ? E(r.x.note) : (r.p ? `${ivTxt(r.p.months, r.p.km)} → <b>${ivTxt(r.x.months, r.x.km)}</b>` : `<b>${ivTxt(r.x.months, r.x.km)}</b>`) + (same ? ' ✓ schon so' : '')}</div>
+          ${r.x.src.note && !r.x.skip ? `<div class="small muted">${E(r.x.src.note)}</div>` : ''}</div></label>`; }).join('')}</div>`;
+  openSheet('Herstellerwerte', body, f => {
+    const sel = [...f.querySelectorAll('input[name=row]:checked')].map(cb => rows[+cb.value]);
+    if (!sel.length){ toast('Nichts ausgewählt'); return false; }
+    sel.forEach(r => {
+      if (r.p) Object.assign(r.p, {months:r.x.months, km:r.x.km, src:r.x.src});
+      else db.plans.push({id:uid(), vehicleId:id, name:r.t.name, months:r.x.months, km:r.x.km, remindDays:'', lastDate:'', lastKm:null, dueOverride:'', notes:'', src:r.x.src});
+    });
+    db.settings.notified = {}; save(); toast(`${sel.length} ${plural(sel.length, 'Wert', 'Werte')} übernommen`);
+  }, {saveText:'Übernehmen'});
 }
 function deleteVehicle(id){
   const v = vehicle(id), n = vServices(id).length;
@@ -1001,6 +1067,12 @@ function editPlan(id, vehicleId){
   const p = id ? plan(id) : {vehicleId, name:'', months:'', km:'', remindDays:'', lastDate:'', lastKm:null, dueOverride:'', notes:''};
   const v = vehicle(p.vehicleId), st = id ? planStatus(p) : null;
   const hasSvc = st && st.last;
+  const md = vData(v);
+  const srcBox = name => { const x = tplFor(name, md); if (!x) return '';
+    if (x.from === 'model' && x.skip) return `<div class="small"><span class="pill st-ok">Hersteller</span> ${E(x.src.gen)}: ${E(x.note)} ${srcLink(x.src)}</div>`;
+    if (x.from === 'model') return `<div class="small"><span class="pill st-ok">Hersteller</span> ${E(x.src.gen)}: <b>${ivTxt(x.months, x.km)}</b>${x.src.note ? ' · ' + E(x.src.note) : ''} ${srcLink(x.src)}
+      <button type="button" class="btn sm" id="pTake" data-m="${x.months}" data-k="${x.km}" style="margin-left:4px">Übernehmen</button></div>`;
+    return `<div class="small muted">Richtwert: ${ivTxt(x.months, x.km)} – bitte mit dem Serviceheft abgleichen.</div>`; };
   openSheet(id ? p.name : 'Neuer Wartungspunkt', `
     ${st && st.status !== 'unknown' ? `<div class="card" style="background:var(--card2)"><div class="row"><div class="grow"><div class="small muted">Nächste Fälligkeit</div><b>${E(dueText(st))}</b>
       <div class="small muted">${E(leftText(st))}</div></div><span class="pill st-${st.status}">${STATUS_TXT[st.status]}</span></div>
@@ -1008,6 +1080,7 @@ function editPlan(id, vehicleId){
     <div class="f"><label>Bezeichnung *</label><input name="name" value="${E(p.name)}" placeholder="z. B. Ölwechsel" list="tplNames"><datalist id="tplNames">${TEMPLATES.map(t => `<option value="${E(t.name)}">`).join('')}</datalist></div>
     <div class="f2"><div class="f"><label>Alle … Monate</label><input name="months" inputmode="numeric" value="${E(p.months)}" placeholder="12"></div>
       <div class="f"><label>oder alle … km</label><input name="km" inputmode="numeric" value="${num(p.km) ? NF.format(p.km) : ''}" placeholder="15.000"></div></div>
+    <div class="f" id="pSrc" style="margin-top:-4px">${srcBox(p.name)}</div>
     <div class="f"><label>Erinnerung – wie viele Tage vorher?</label><input name="remindDays" inputmode="numeric" value="${E(p.remindDays)}" placeholder="Standard: ${db.settings.remindDays} Tage">
       <div class="hint">Leer lassen = Standard aus den Einstellungen (${db.settings.remindDays} Tage).</div></div>
     <fieldset><legend>${hasSvc ? 'Fester Termin' : 'Startwert'}</legend>
@@ -1027,18 +1100,24 @@ function editPlan(id, vehicleId){
     const months = num(val(f, 'months')), kmI = num(val(f, 'km')), rd = val(f, 'remindDays');
     if (!months && !kmI && !val(f, 'dueOverride')){ toast('Bitte ein Intervall (Monate oder km) oder einen festen Termin angeben'); return false; }
     if (rd !== '' && (num(rd) == null || num(rd) < 0)){ toast('Erinnerung: bitte Anzahl Tage eingeben'); return false; }
-    Object.assign(p, {name, months:months ? Math.round(months) : '', km:kmI ? Math.round(kmI) : '', remindDays:rd === '' ? '' : Math.round(num(rd)),
-      dueOverride:val(f, 'dueOverride'), notes:val(f, 'notes')});
+    const xm = tplFor(name, md), nm = months ? Math.round(months) : '', nk = kmI ? Math.round(kmI) : '';
+    Object.assign(p, {name, months:nm, km:nk, remindDays:rd === '' ? '' : Math.round(num(rd)), dueOverride:val(f, 'dueOverride'), notes:val(f, 'notes'),
+      src:xm && xm.from === 'model' && !xm.skip && String(xm.months) === String(nm) && String(xm.km) === String(nk) ? xm.src : null});
     if (f.elements.lastDate){ p.lastDate = val(f, 'lastDate'); p.lastKm = num(val(f, 'lastKm')); }
     if (!id){ p.id = uid(); db.plans.push(p); }
     delete db.settings.notified[p.id];
     save(); toast('Gespeichert');
   }, {onMount:(f, close) => {
     // Vorlage gewählt (z. B. „Kraftstofffilter“) → Intervall automatisch eintragen
+    const bindTake = () => { const b = f.querySelector('#pTake'); if (b) b.onclick = () => {
+      f.elements.months.value = b.dataset.m; f.elements.km.value = num(b.dataset.k) ? NF.format(+b.dataset.k) : ''; toast('Herstellerwert übernommen'); }; };
+    bindTake();
     f.elements.name.addEventListener('change', () => {
-      const t = TEMPLATES.find(x => x.name.toLowerCase() === f.elements.name.value.trim().toLowerCase()); if (!t) return;
-      if (!f.elements.months.value && t.months) f.elements.months.value = t.months;
-      if (!f.elements.km.value && t.km) f.elements.km.value = NF.format(t.km);
+      const t = TEMPLATES.find(x => x.name.toLowerCase() === f.elements.name.value.trim().toLowerCase());
+      f.querySelector('#pSrc').innerHTML = t ? srcBox(t.name) : ''; bindTake(); if (!t) return;
+      const x = tplFor(t.name, md); if (x.skip) return;
+      if (!f.elements.months.value && x.months) f.elements.months.value = x.months;
+      if (!f.elements.km.value && x.km) f.elements.km.value = NF.format(x.km);
     });
     if (!id) return;
     f.querySelector('#pIcs').onclick = () => exportICS([p], 'Erinnerung-' + p.name);
@@ -1230,7 +1309,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 </div>
 <script>
 (function(){
-  var APP_VERSION = '1.2.0';   // bei jeder Änderung erhöhen – und in version.json gleich setzen
+  var APP_VERSION = '1.3.0';   // bei jeder Änderung erhöhen – und in version.json gleich setzen
   window.AS_VERSION = APP_VERSION;
   var m = document.getElementById('updMsg'); if (m) m.textContent = APP_VERSION;
   var box = document.getElementById('upd');

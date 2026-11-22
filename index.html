@@ -181,6 +181,7 @@ const TEMPLATES = [
   {name:'Bremsflüssigkeit',  months:24, km:0,     def:true},
   {name:'Innenraumfilter',   months:12, km:15000},
   {name:'Luftfilter',        months:24, km:30000},
+  {name:'Kraftstofffilter',  months:24, km:30000, diesel:true},
   {name:'Zündkerzen',        months:48, km:60000},
   {name:'Zahnriemen',        months:72, km:120000},
   {name:'Klimaservice',      months:24, km:0},
@@ -782,7 +783,13 @@ function editVehicle(id){
       data.color = val(f, 'color') || v.color;
       Object.assign(v, data); save(); toast('Gespeichert');
     }
-  });
+  }, {onMount:f => {
+    // Diesel gewählt → Kraftstofffilter automatisch mit in den Wartungsplan
+    if (!isNew) return;
+    f.elements.fuel.addEventListener('change', () => {
+      TEMPLATES.forEach((t, i) => { if (t.diesel){ const cb = f.querySelector(`input[name=tpl][value="${i}"]`); if (cb) cb.checked = f.elements.fuel.value === 'Diesel' || cb.checked; } });
+    });
+  }});
 }
 function deleteVehicle(id){
   const v = vehicle(id), n = vServices(id).length;
@@ -845,6 +852,12 @@ function editPlan(id, vehicleId){
     delete db.settings.notified[p.id];
     save(); toast('Gespeichert');
   }, {onMount:(f, close) => {
+    // Vorlage gewählt (z. B. „Kraftstofffilter“) → Intervall automatisch eintragen
+    f.elements.name.addEventListener('change', () => {
+      const t = TEMPLATES.find(x => x.name.toLowerCase() === f.elements.name.value.trim().toLowerCase()); if (!t) return;
+      if (!f.elements.months.value && t.months) f.elements.months.value = t.months;
+      if (!f.elements.km.value && t.km) f.elements.km.value = NF.format(t.km);
+    });
     if (!id) return;
     f.querySelector('#pIcs').onclick = () => exportICS([p], 'Erinnerung-' + p.name);
     f.querySelector('#pSvc').onclick = () => { close(); setTimeout(() => editService(null, {vehicleId:p.vehicleId, planIds:[p.id]}), 220); };
@@ -1035,7 +1048,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 </div>
 <script>
 (function(){
-  var APP_VERSION = '1.0.0';   // bei jeder Änderung erhöhen – und in version.json gleich setzen
+  var APP_VERSION = '1.1.0';   // bei jeder Änderung erhöhen – und in version.json gleich setzen
   window.AS_VERSION = APP_VERSION;
   var m = document.getElementById('updMsg'); if (m) m.textContent = APP_VERSION;
   var box = document.getElementById('upd');

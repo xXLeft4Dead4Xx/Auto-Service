@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Auto-Service</title>
+<meta name="theme-color" content="#0f1317">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Auto-Service">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#0f1317;--card:#171d23;--card2:#1d252c;--line:#26303a;--text:#e6edf2;--muted:#8b98a5;
+  --acc:#f2994a;--acc-ink:#1a1006;--ok:#3ecf8e;--soon:#f2c94c;--over:#eb5757;--unk:#7d8a97;
+  --r:14px;--sh:0 6px 24px rgba(0,0,0,.25);
+}
+@media (prefers-color-scheme: light){
+  :root{--bg:#f3f5f7;--card:#ffffff;--card2:#f7f9fa;--line:#e1e6ea;--text:#13181c;--muted:#5d6b78;
+    --acc:#d9731f;--acc-ink:#fff;--ok:#1f9d63;--soon:#b98900;--over:#d03b3b;--unk:#7a8794;--sh:0 6px 24px rgba(20,30,40,.08)}
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--acc)}
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
+header.top img{width:30px;height:30px;border-radius:8px}
+header.top h1{font-size:18px;margin:0;flex:1;letter-spacing:.2px}
+header.top .back{background:none;border:0;color:var(--acc);font-size:16px;padding:4px 6px 4px 0;cursor:pointer;display:none}
+header.top.sub .back{display:block}
+header.top.sub img{display:none}
+main{max-width:860px;margin:0 auto;padding:14px 14px 24px}
+h2{font-size:15px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:22px 4px 8px;font-weight:600}
+h2:first-child{margin-top:4px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:10px}
+.card.tap{cursor:pointer}
+.card.tap:active{transform:scale(.995)}
+.row{display:flex;align-items:center;gap:10px}
+.row.wrap{flex-wrap:wrap}
+.grow{flex:1;min-width:0}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.big{font-size:22px;font-weight:700}
+.right{text-align:right}
+.ellip{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:9px 14px;font-weight:600;cursor:pointer;font-size:15px;display:inline-flex;align-items:center;gap:6px;justify-content:center}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+.btn.danger{color:var(--over);border-color:color-mix(in srgb,var(--over) 40%,var(--line))}
+.btn.sm{padding:6px 10px;font-size:13px;border-radius:8px}
+.btn.block{width:100%}
+.btn:disabled{opacity:.5}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
+.st-ok{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+.st-soon{background:color-mix(in srgb,var(--soon) 20%,transparent);color:var(--soon)}
+.st-overdue{background:color-mix(in srgb,var(--over) 18%,transparent);color:var(--over)}
+.st-unknown{background:color-mix(in srgb,var(--unk) 18%,transparent);color:var(--unk)}
+.bar{height:6px;background:var(--line);border-radius:6px;overflow:hidden;margin-top:8px}
+.bar i{display:block;height:100%;border-radius:6px}
+.empty{text-align:center;padding:30px 16px;color:var(--muted)}
+.empty .ico{font-size:42px;margin-bottom:6px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:10px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.kpi .l{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.kpi .v{font-size:21px;font-weight:700;margin-top:2px}
+.list .item{display:flex;gap:10px;align-items:center;padding:11px 0;border-top:1px solid var(--line)}
+.list .item:first-child{border-top:0;padding-top:2px}
+.list .item:last-child{padding-bottom:2px}
+.list .item.tap{cursor:pointer}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--card2);border-radius:999px;padding:6px 12px;font-size:14px;cursor:pointer;user-select:none}
+.chip.on{background:var(--acc);border-color:var(--acc);color:var(--acc-ink);font-weight:600}
+.search{width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);margin-bottom:10px}
+.hbar{display:flex;align-items:center;gap:8px;margin:7px 0}
+.hbar .lab{width:96px;font-size:14px;flex:none}
+.hbar .trk{flex:1;height:14px;background:var(--line);border-radius:7px;overflow:hidden}
+.hbar .trk i{display:block;height:100%;background:var(--acc);border-radius:7px}
+.hbar .val{width:92px;text-align:right;font-size:14px;font-variant-numeric:tabular-nums;flex:none}
+.num{font-variant-numeric:tabular-nums}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:15px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0}
+table.parts{width:100%;border-collapse:collapse;font-size:14px}
+table.parts th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px;padding:4px 6px 6px 0}
+table.parts td{padding:7px 6px 7px 0;border-top:1px solid var(--line);vertical-align:top}
+table.parts td.r,table.parts th.r{text-align:right}
+code.pn{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;background:var(--card2);border:1px solid var(--line);border-radius:6px;padding:1px 6px;cursor:pointer}
+
+/* Tabbar */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+nav.tabs button{flex:1;background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--muted);padding:4px 0;cursor:pointer;position:relative}
+nav.tabs button svg{width:24px;height:24px}
+nav.tabs button.on{color:var(--acc)}
+nav.tabs .badge{position:absolute;top:0;left:calc(50% + 6px);background:var(--over);color:#fff;font-size:10px;font-weight:700;border-radius:999px;min-width:17px;height:17px;line-height:17px;padding:0 4px}
+.fab{position:fixed;right:18px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:25;width:56px;height:56px;border-radius:50%;background:var(--acc);color:var(--acc-ink);border:0;font-size:30px;line-height:56px;box-shadow:var(--sh);cursor:pointer}
+
+/* Sheet */
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .18s}
+.sheet-bg.on{opacity:1}
+.sheet{background:var(--bg);width:100%;max-width:720px;max-height:94vh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;transform:translateY(30px);transition:transform .2s;box-shadow:var(--sh)}
+.sheet-bg.on .sheet{transform:none}
+@media (min-width:760px){.sheet-bg{align-items:center}.sheet{border-radius:18px;max-height:88vh}}
+.sheet .sh-h{display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.sheet .sh-h b{flex:1;font-size:17px;text-align:center}
+.sheet .sh-h button{background:none;border:0;color:var(--acc);font-size:16px;cursor:pointer;min-width:74px;padding:4px}
+.sheet .sh-h button.save{font-weight:700;text-align:right}
+.sheet .sh-h button.cancel{text-align:left}
+.sheet .sh-b{overflow:auto;padding:14px 16px calc(24px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
+.f{margin-bottom:12px}
+.f label{display:block;font-size:13px;color:var(--muted);margin:0 2px 4px;font-weight:600}
+.f input,.f select,.f textarea{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);min-height:44px}
+.f textarea{min-height:70px;resize:vertical}
+.f .hint{font-size:12px;color:var(--muted);margin:4px 2px 0}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.f3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+fieldset{border:1px solid var(--line);border-radius:12px;padding:12px;margin:0 0 12px}
+legend{font-size:13px;color:var(--muted);font-weight:700;padding:0 6px}
+.prow{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px;position:relative}
+.prow .x{position:absolute;top:6px;right:6px;background:none;border:0;color:var(--over);font-size:20px;cursor:pointer;width:32px;height:32px}
+.prow .f{margin-bottom:8px}
+.prow .f input{min-height:40px;padding:8px 10px}
+.prow .sum{font-size:13px;color:var(--muted);text-align:right}
+.total{display:flex;justify-content:space-between;font-size:18px;font-weight:700;padding:12px 4px;border-top:2px solid var(--line);margin-top:6px}
+.cb{display:flex;align-items:center;gap:10px;padding:8px 2px;cursor:pointer}
+.cb input{width:22px;height:22px;accent-color:var(--acc)}
+.toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top));transform:translate(-50%,-150%);background:var(--card);border:1px solid var(--line);box-shadow:var(--sh);
+  padding:10px 16px;border-radius:12px;z-index:9998;transition:transform .25s;font-size:15px;max-width:90vw}
+.toast.on{transform:translate(-50%,0)}
+
+/* Update-Banner (wie µC-Trainer) */
+#upd{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translate(-50%,150%);z-index:9999;
+  background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;width:min(92vw,420px);box-shadow:var(--sh);transition:transform .3s}
+#upd:not(.on){visibility:hidden;pointer-events:none;transform:translate(-50%,calc(100% + 240px)) !important}
+#upd.on{transform:translate(-50%,0);visibility:visible}
+#upd b{color:var(--acc)}
+#upd p{margin:4px 0 10px;font-size:14px;color:var(--muted)}
+#upd .r{display:flex;gap:8px;justify-content:flex-end}
+#upd button{border-radius:8px;padding:9px 14px;font-weight:600;cursor:pointer;font-size:14px}
+#upd .go{background:var(--acc);border:0;color:var(--acc-ink)}
+#upd .later{background:none;border:1px solid var(--line);color:var(--text)}
+</style>
+</head>
+<body>
+<header class="top" id="top">
+  <button class="back" id="backBtn">‹ Zurück</button>
+  <img src="icon-192.png" alt="">
+  <h1 id="title">Auto-Service</h1>
+</header>
+<main id="main"></main>
+<button class="fab" id="fab" aria-label="Neuen Service eintragen">+</button>
+<nav class="tabs" id="tabs">
+  <button data-tab="home" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14M6 17v2M18 17v2M3 13l2-6a2 2 0 0 1 2-1.4h10A2 2 0 0 1 19 7l2 6v4H3z"/><circle cx="7.5" cy="13.5" r="1"/><circle cx="16.5" cy="13.5" r="1"/></svg>Fahrzeuge<span class="badge" id="badge" hidden></span></button>
+  <button data-tab="services"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg>Services</button>
+  <button data-tab="parts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>Teile</button>
+  <button data-tab="costs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Kosten</button>
+  <button data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Einstellungen</button>
+</nav>
+<div class="toast" id="toast"></div>
+<input type="file" id="importFile" accept=".json,application/json" hidden>
+
+<script>
+'use strict';
+/* =========================================================
+   Auto-Service – Wartungen, Teile, Preise & Erinnerungen
+   Alle Daten bleiben lokal auf dem Gerät (localStorage).
+   ========================================================= */
+const KEY = 'autoservice-data-v1';
+const COLORS = ['#f2994a','#56ccf2','#6fcf97','#bb6bd9','#eb5757','#f2c94c','#2d9cdb','#9b51e0'];
+const FUELS = ['Benzin','Diesel','Elektro','Hybrid','Plug-in-Hybrid','LPG/CNG','Sonstiges'];
+const TEMPLATES = [
+  {name:'Ölwechsel',         months:12, km:15000, def:true},
+  {name:'Inspektion',        months:24, km:30000, def:true},
+  {name:'HU / TÜV',          months:24, km:0,     def:true},
+  {name:'Bremsflüssigkeit',  months:24, km:0,     def:true},
+  {name:'Innenraumfilter',   months:12, km:15000},
+  {name:'Luftfilter',        months:24, km:30000},
+  {name:'Zündkerzen',        months:48, km:60000},
+  {name:'Zahnriemen',        months:72, km:120000},
+  {name:'Klimaservice',      months:24, km:0},
+  {name:'Reifenwechsel',     months:6,  km:0},
+  {name:'Kühlmittel',        months:48, km:0},
+  {name:'Getriebeöl',        months:60, km:60000}
+];
+const UNITS = ['Stk','l','ml','kg','Satz','m','Pack'];
+
+/* ---------- Hilfsfunktionen ---------- */
+const $ = s => document.querySelector(s);
+const E = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const pad = n => String(n).padStart(2, '0');
+const toISO = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const todayISO = () => toISO(new Date());
+const parseISO = s => { const [y, m, d] = String(s).split('-').map(Number); return new Date(y, m - 1, d); };
+const validISO = s => /^\d{4}-\d{2}-\d{2}$/.test(s || '') && !isNaN(parseISO(s));
+const addDays = (iso, n) => { const d = parseISO(iso); d.setDate(d.getDate() + n); return toISO(d); };
+const addMonths = (iso, n) => {
+  const d = parseISO(iso), day = d.getDate();
+  d.setDate(1); d.setMonth(d.getMonth() + n);
+  d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()));
+  return toISO(d);
+};
+const diffDays = (a, b) => Math.round((parseISO(b) - parseISO(a)) / 864e5);
+const num = v => {
+  if (v == null) return null;
+  let s = String(v).trim().replace(/\s|€|km/gi, '');
+  if (s === '') return null;
+  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');      // 1.234,56
+  else if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');     // 15.000
+  const n = parseFloat(s);
+  return isNaN(n) ? null : n;
+};
+const NF = new Intl.NumberFormat('de-DE');
+const CF = new Intl.NumberFormat('de-DE', {style:'currency', currency:'EUR'});
+const eur = n => CF.format(n || 0);
+const km = n => n == null ? '–' : NF.format(Math.round(n)) + ' km';
+const dt = iso => iso ? parseISO(iso).toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit', year:'numeric'}) : '–';
+const numIn = n => n == null ? '' : String(n).replace('.', ',');
+const plural = (n, a, b) => n === 1 ? a : b;
+
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('on'), 2200);
+}
+
+/* ---------- Daten ---------- */
+function emptyDB(){ return {version:1, vehicles:[], plans:[], services:[], settings:{remindDays:14, remindKm:1000, notify:false, notified:{}}}; }
+function normalize(d){
+  const n = emptyDB();
+  if (!d || typeof d !== 'object') return n;
+  n.vehicles = Array.isArray(d.vehicles) ? d.vehicles.filter(v => v && v.id) : [];
+  n.plans    = Array.isArray(d.plans) ? d.plans.filter(p => p && p.id && p.vehicleId) : [];
+  n.services = Array.isArray(d.services) ? d.services.filter(s => s && s.id && s.vehicleId) : [];
+  n.settings = Object.assign(n.settings, d.settings || {});
+  n.settings.notified = n.settings.notified || {};
+  n.vehicles.forEach(v => { v.kmLog = Array.isArray(v.kmLog) ? v.kmLog : []; });
+  n.services.forEach(s => { s.parts = Array.isArray(s.parts) ? s.parts : []; s.planIds = Array.isArray(s.planIds) ? s.planIds : []; });
+  return n;
+}
+let db;
+try { db = normalize(JSON.parse(localStorage.getItem(KEY))); } catch(e){ db = emptyDB(); }
+function persist(){
+  try { localStorage.setItem(KEY, JSON.stringify(db)); }
+  catch(e){ alert('Speichern fehlgeschlagen: ' + e.message); }
+}
+function save(){ persist(); render(); runReminders(); }
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+
+const vehicle = id => db.vehicles.find(v => v.id === id);
+const plan = id => db.plans.find(p => p.id === id);
+const service = id => db.services.find(s => s.id === id);
+const byDateDesc = (a, b) => (b.date || '').localeCompare(a.date || '') || (b.km || 0) - (a.km || 0);
+const vServices = vid => db.services.filter(s => s.vehicleId === vid).sort(byDateDesc);
+const vPlans = vid => db.plans.filter(p => p.vehicleId === vid);
+
+function partsSum(s){ return (s.parts || []).reduce((a, p) => a + (num(p.qty) ?? 1) * (num(p.price) || 0), 0); }
+function serviceTotal(s){ return partsSum(s) + (num(s.labor) || 0) + (num(s.other) || 0); }
+function serviceTitle(s){
+  const names = (s.planIds || []).map(id => plan(id)).filter(Boolean).map(p => p.name);
+  if (s.title) return s.title;
+  return names.length ? names.join(', ') : 'Service';
+}
+
+/* km-Stand: höchster bekannter Wert aus km-Log und Services */
+function kmPoints(v){
+  const pts = [];
+  (v.kmLog || []).forEach(e => { if (validISO(e.date) && e.km != null) pts.push({date:e.date, km:+e.km}); });
+  db.services.forEach(s => { if (s.vehicleId === v.id && validISO(s.date) && s.km != null) pts.push({date:s.date, km:+s.km}); });
+  return pts.sort((a, b) => a.date.localeCompare(b.date) || a.km - b.km);
+}
+function currentKm(v){ const p = kmPoints(v); return p.length ? Math.max(...p.map(x => x.km)) : null; }
+/* Durchschnittliche km pro Tag (für Prognose, wann eine km-Grenze erreicht wird) */
+function kmRate(v){
+  const p = kmPoints(v); if (p.length < 2) return null;
+  const a = p[0], b = p[p.length - 1], days = diffDays(a.date, b.date);
+  if (days < 30 || b.km <= a.km) return null;
+  return (b.km - a.km) / days;
+}
+
+/* ---------- Fälligkeit / Erinnerung ---------- */
+function planStatus(p){
+  const v = vehicle(p.vehicleId), S = db.settings, today = todayISO();
+  const last = db.services.filter(s => s.vehicleId === p.vehicleId && s.planIds.includes(p.id)).sort(byDateDesc)[0] || null;
+  const lastDate = last ? last.date : (validISO(p.lastDate) ? p.lastDate : null);
+  const lastKm = last ? (last.km ?? null) : (p.lastKm ?? null);
+  const months = num(p.months) || 0, kmInt = num(p.km) || 0;
+  let dueDate = null;
+  if (validISO(p.dueOverride)) dueDate = p.dueOverride;
+  else if (months && lastDate) dueDate = addMonths(lastDate, months);
+  const dueKm = (kmInt && lastKm != null) ? lastKm + kmInt : null;
+  const cur = v ? currentKm(v) : null, rate = v ? kmRate(v) : null;
+  const kmLeft = (dueKm != null && cur != null) ? dueKm - cur : null;
+  let kmDate = null;
+  if (kmLeft != null && rate) kmDate = addDays(today, Math.max(0, Math.ceil(kmLeft / rate)));
+  let eff = dueDate, by = 'date';
+  if (kmDate && (!eff || kmDate < eff)) { eff = kmDate; by = 'km'; }
+  const remindDays = (p.remindDays === '' || p.remindDays == null) ? S.remindDays : +p.remindDays;
+  const daysLeft = eff ? diffDays(today, eff) : null;
+  let status = 'ok';
+  if (!dueDate && dueKm == null) status = 'unknown';
+  else if ((dueDate && diffDays(today, dueDate) < 0) || (kmLeft != null && kmLeft <= 0)) status = 'overdue';
+  else if ((daysLeft != null && daysLeft <= remindDays) || (kmLeft != null && kmLeft <= (+S.remindKm || 0))) status = 'soon';
+  let prog = 0;
+  if (dueDate && lastDate) prog = Math.max(prog, diffDays(lastDate, today) / Math.max(1, diffDays(lastDate, dueDate)));
+  if (dueKm != null && cur != null && kmInt) prog = Math.max(prog, (cur - lastKm) / kmInt);
+  prog = Math.max(0, Math.min(1, prog));
+  const remindDate = eff ? addDays(eff, -remindDays) : null;
+  return {last, lastDate, lastKm, dueDate, dueKm, kmDate, eff, by, daysLeft, kmLeft, status, remindDays, remindDate, prog, cur};
+}
+const STATUS_TXT = {ok:'OK', soon:'Bald fällig', overdue:'Überfällig', unknown:'Unbekannt'};
+const STATUS_COL = {ok:'var(--ok)', soon:'var(--soon)', overdue:'var(--over)', unknown:'var(--unk)'};
+const STATUS_ORD = {overdue:0, soon:1, ok:2, unknown:3};
+function dueText(st){
+  const parts = [];
+  if (st.dueDate) parts.push(dt(st.dueDate));
+  if (st.dueKm != null) parts.push('bei ' + km(st.dueKm));
+  return parts.join(' oder ') || 'kein Termin';
+}
+function leftText(st){
+  if (st.status === 'unknown') return 'Letzten Termin eintragen';
+  const d = st.dueDate ? diffDays(todayISO(), st.dueDate) : null;
+  const dateTxt = d == null ? null : d < 0 ? `seit ${-d} ${plural(-d,'Tag','Tagen')} fällig` : d === 0 ? 'heute fällig' : `in ${d} ${plural(d,'Tag','Tagen')}`;
+  const kmTxt = st.kmLeft == null ? null : st.kmLeft <= 0 ? `${km(-st.kmLeft)} drüber` : `noch ${km(st.kmLeft)}`;
+  if (st.status === 'overdue'){            // nur den Grund zeigen, der wirklich zutrifft
+    return [d != null && d < 0 ? dateTxt : null, st.kmLeft != null && st.kmLeft <= 0 ? kmTxt : null].filter(Boolean).join(' · ');
+  }
+  const out = [];
+  const kmFirst = st.by === 'km';           // was zuerst erreicht wird, steht vorne
+  if (kmFirst){ kmTxt && out.push(kmTxt); st.kmDate && out.push(`ca. ${dt(st.kmDate)}`); dateTxt && out.push('spätestens ' + dt(st.dueDate)); }
+  else { dateTxt && out.push(dateTxt); kmTxt && out.push(kmTxt); }
+  return out.join(' · ');
+}
+function allStatuses(){
+  return db.plans.map(p => ({p, v:vehicle(p.vehicleId), st:planStatus(p)})).filter(x => x.v);
+}
+function activeReminders(){
+  return allStatuses().filter(x => x.st.status === 'overdue' || x.st.status === 'soon')
+    .sort((a, b) => STATUS_ORD[a.st.status] - STATUS_ORD[b.st.status] || (a.st.eff || '9').localeCompare(b.st.eff || '9'));
+}
+
+/* Erinnerungen beim Öffnen: Badge + (optional) Mitteilung */
+async function runReminders(){
+  const due = activeReminders();
+  const b = $('#badge'); b.hidden = !due.length; b.textContent = due.length;
+  try { if (navigator.setAppBadge) due.length ? navigator.setAppBadge(due.length) : navigator.clearAppBadge(); } catch(e){}
+  if (!db.settings.notify || !('Notification' in window) || Notification.permission !== 'granted') return;
+  const today = todayISO(); let reg = null, changed = false;
+  try { reg = navigator.serviceWorker ? await navigator.serviceWorker.getRegistration() : null; } catch(e){}
+  for (const {p, v, st} of due){
+    const last = db.settings.notified[p.id];
+    if (last && last.status === st.status && diffDays(last.date, today) < 3) continue;   // max. alle 3 Tage
+    const title = `${v.name}: ${p.name} ${st.status === 'overdue' ? 'überfällig' : 'bald fällig'}`;
+    const body = `Fällig: ${dueText(st)} – ${leftText(st)}`;
+    try {
+      if (reg && reg.showNotification) await reg.showNotification(title, {body, tag:p.id, icon:'icon-192.png', badge:'icon-192.png'});
+      else new Notification(title, {body, tag:p.id, icon:'icon-192.png'});
+      db.settings.notified[p.id] = {date:today, status:st.status}; changed = true;
+    } catch(e){}
+  }
+  if (changed) persist();
+}
+
+/* ---------- Kalender (.ics) ---------- */
+function icsEsc(s){ return String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n'); }
+function icsFold(line){
+  const out = []; let cur = '', len = 0;
+  for (const ch of line){
+    const l = new TextEncoder().encode(ch).length;
+    if (len + l > 74){ out.push(cur); cur = ' ' + ch; len = 1 + l; } else { cur += ch; len += l; }
+  }
+  out.push(cur); return out.join('\r\n');
+}
+function icsEvent(p){
+  const v = vehicle(p.vehicleId), st = planStatus(p);
+  if (!st.eff) return null;
+  const day = st.eff < todayISO() ? todayISO() : st.eff;          // überfällig → Termin heute
+  const start = day.replace(/-/g, ''), end = addDays(day, 1).replace(/-/g, '');
+  const n = new Date(), stamp = n.getUTCFullYear() + pad(n.getUTCMonth()+1) + pad(n.getUTCDate()) + 'T' + pad(n.getUTCHours()) + pad(n.getUTCMinutes()) + '00Z';
+  const d = st.remindDays;
+  const trigger = d > 0 ? `-P${d - 1}DT15H` : 'PT9H';   // Erinnerung um 9:00 Uhr, d Tage vorher
+  const desc = [`${v.name}${v.plate ? ' (' + v.plate + ')' : ''}`, `Fällig: ${dueText(st)}`,
+    st.by === 'km' ? `Datum geschätzt aus deiner Fahrleistung (${km(st.dueKm)})` : '', p.notes || ''].filter(Boolean).join('\n');
+  return ['BEGIN:VEVENT', `UID:${p.id}@auto-service-app`, `DTSTAMP:${stamp}`, `DTSTART;VALUE=DATE:${start}`, `DTEND;VALUE=DATE:${end}`,
+    `SUMMARY:${icsEsc('🔧 ' + v.name + ': ' + p.name + ' fällig')}`, `DESCRIPTION:${icsEsc(desc)}`, 'TRANSP:TRANSPARENT',
+    'BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${icsEsc(v.name + ': ' + p.name + (d ? ' in ' + d + ' ' + plural(d,'Tag','Tagen') : ' heute') + ' fällig')}`, `TRIGGER:${trigger}`, 'END:VALARM',
+    'END:VEVENT'].map(icsFold).join('\r\n');
+}
+function buildICS(plans){
+  const ev = plans.map(icsEvent).filter(Boolean);
+  if (!ev.length) return null;
+  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Auto-Service App//DE', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', ...ev, 'END:VCALENDAR'].join('\r\n') + '\r\n';
+}
+const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function exportICS(plans, name){
+  const ics = buildICS(plans);
+  if (!ics){ toast('Kein Termin berechenbar – erst letzten Service eintragen'); return; }
+  if (isIOS()){
+    // iPhone/iPad öffnen .ics direkt mit „Zum Kalender hinzufügen“
+    location.href = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ics);
+  } else download(ics, name + '.ics', 'text/calendar');
+  toast('Kalender-Termin erstellt');
+}
+function download(text, filename, type){
+  const blob = new Blob([text], {type}); const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1500);
+}
+async function shareOrDownload(text, filename, type){
+  try {
+    const file = new File([text], filename, {type});
+    if (isIOS() && navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:filename}); return; }
+  } catch(e){ if (e && e.name === 'AbortError') return; }
+  download(text, filename, type);
+}
+
+/* ---------- Navigation ---------- */
+let view = {tab:'home', vehicleId:null, serviceFilter:'all', serviceQuery:'', partsQuery:'', costVehicle:'all'};
+try { Object.assign(view, JSON.parse(sessionStorage.getItem('as-view')) || {}); } catch(e){}
+function go(patch){ Object.assign(view, patch); render(); window.scrollTo(0, 0); }
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => go({tab:b.dataset.tab, vehicleId:null}));
+$('#backBtn').onclick = () => go({vehicleId:null});
+$('#fab').onclick = () => {
+  if (!db.vehicles.length) return editVehicle();
+  editService(null, {vehicleId: view.vehicleId || (view.tab === 'services' && view.serviceFilter !== 'all' ? view.serviceFilter : null)});
+};
+
+function render(){
+  try { sessionStorage.setItem('as-view', JSON.stringify(view)); } catch(e){}
+  if (view.vehicleId && !vehicle(view.vehicleId)) view.vehicleId = null;
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === view.tab));
+  const sub = view.tab === 'home' && view.vehicleId;
+  $('#top').classList.toggle('sub', !!sub);
+  const titles = {home:'Auto-Service', services:'Services', parts:'Teile & Artikelnummern', costs:'Kosten', settings:'Einstellungen'};
+  $('#title').textContent = sub ? vehicle(view.vehicleId).name : titles[view.tab];
+  $('#fab').style.display = (view.tab === 'settings') ? 'none' : '';
+  const m = $('#main');
+  if (sub) m.innerHTML = renderVehicle(vehicle(view.vehicleId));
+  else m.innerHTML = ({home:renderHome, services:renderServices, parts:renderParts, costs:renderCosts, settings:renderSettings})[view.tab]();
+  bindMain();
+}
+
+/* Klicks im Hauptbereich über data-Attribute */
+function bindMain(){
+  const m = $('#main');
+  m.querySelectorAll('[data-act]').forEach(el => el.addEventListener('click', ev => {
+    ev.stopPropagation();
+    const a = el.dataset.act, id = el.dataset.id;
+    const acts = {
+      'open-vehicle': () => go({vehicleId:id}),
+      'add-vehicle': () => editVehicle(),
+      'edit-vehicle': () => editVehicle(id),
+      'del-vehicle': () => deleteVehicle(id),
+      'km': () => editKm(id),
+      'add-service': () => editService(null, {vehicleId:id || view.vehicleId}),
+      'open-service': () => showService(id),
+      'edit-plan': () => editPlan(id),
+      'add-plan': () => editPlan(null, id),
+      'ics-plan': () => exportICS([plan(id)], 'Erinnerung-' + plan(id).name),
+      'ics-vehicle': () => exportICS(vPlans(id), 'Wartungen-' + vehicle(id).name),
+      'ics-all': () => exportICS(db.plans, 'Auto-Service-Termine'),
+      'svc-filter': () => go({serviceFilter:id}),
+      'cost-filter': () => go({costVehicle:id}),
+      'copy': () => copyText(el.dataset.text),
+      'export-json': exportJSON,
+      'export-csv': exportCSV,
+      'import-json': () => $('#importFile').click(),
+      'notify': toggleNotify,
+      'check-update': () => window.asCheckUpdate && window.asCheckUpdate(true),
+      'wipe': wipeAll,
+      'install-help': installHelp
+    };
+    acts[a] && acts[a]();
+  }));
+  m.querySelectorAll('[data-set]').forEach(el => el.addEventListener('change', () => {
+    const k = el.dataset.set, v = num(el.value);
+    if (v == null || v < 0){ toast('Bitte eine gültige Zahl eingeben'); el.value = db.settings[k]; return; }
+    db.settings[k] = Math.round(v); db.settings.notified = {}; save(); toast('Gespeichert');
+  }));
+  const sq = $('#svcSearch'); if (sq) sq.addEventListener('input', () => { view.serviceQuery = sq.value; const l = $('#svcList'); l.innerHTML = serviceListHTML(); bindList(l); });
+  const pq = $('#partSearch'); if (pq) pq.addEventListener('input', () => { view.partsQuery = pq.value; const l = $('#partList'); l.innerHTML = partsListHTML(); bindList(l); });
+}
+function bindList(root){
+  root.querySelectorAll('[data-act]').forEach(el => el.addEventListener('click', ev => {
+    ev.stopPropagation();
+    if (el.dataset.act === 'open-service') showService(el.dataset.id);
+    if (el.dataset.act === 'copy') copyText(el.dataset.text);
+  }));
+}
+async function copyText(t){
+  try { await navigator.clipboard.writeText(t); toast('„' + t + '“ kopiert'); }
+  catch(e){ prompt('Artikelnummer kopieren:', t); }
+}
+
+/* ---------- Ansicht: Fahrzeuge ---------- */
+function reminderRow(x, showVehicle){
+  const {p, v, st} = x;
+  return `<div class="item tap" data-act="edit-plan" data-id="${p.id}">
+    <span class="dot" style="background:${STATUS_COL[st.status]}"></span>
+    <div class="grow"><div class="ellip"><b>${E(p.name)}</b>${showVehicle ? ` <span class="muted">· ${E(v.name)}</span>` : ''}</div>
+    <div class="small muted">${E(leftText(st))}</div></div>
+    <span class="pill st-${st.status}">${STATUS_TXT[st.status]}</span></div>`;
+}
+function renderHome(){
+  if (!db.vehicles.length) return `<div class="card empty"><div class="ico">🚗</div><p><b>Noch kein Fahrzeug angelegt.</b><br>Lege dein erstes Auto an – danach kannst du Services mit Teilen, Artikelnummern und Preisen eintragen und wirst rechtzeitig erinnert.</p>
+    <button class="btn pri" data-act="add-vehicle">+ Fahrzeug anlegen</button></div>`;
+  const rem = activeReminders();
+  let h = '';
+  if (rem.length) h += `<h2>Erinnerungen</h2><div class="card list">${rem.map(x => reminderRow(x, true)).join('')}</div>`;
+  h += `<h2>Meine Fahrzeuge</h2>`;
+  h += db.vehicles.map(v => {
+    const sts = vPlans(v.id).map(p => ({p, st:planStatus(p)})).filter(x => x.st.status !== 'unknown')
+      .sort((a, b) => STATUS_ORD[a.st.status] - STATUS_ORD[b.st.status] || (a.st.eff || '9').localeCompare(b.st.eff || '9'));
+    const next = sts[0];
+    const svcs = vServices(v.id), total = svcs.reduce((a, s) => a + serviceTotal(s), 0);
+    return `<div class="card tap" data-act="open-vehicle" data-id="${v.id}">
+      <div class="row"><span class="dot" style="background:${v.color || COLORS[0]};width:14px;height:14px"></span>
+        <div class="grow"><div class="ellip" style="font-weight:700;font-size:17px">${E(v.name)}</div>
+        <div class="small muted ellip">${E([v.make, v.model, v.plate].filter(Boolean).join(' · ') || 'Keine Details')}</div></div>
+        <button class="btn sm" data-act="km" data-id="${v.id}">${km(currentKm(v))}</button></div>
+      ${next ? `<div class="row" style="margin-top:10px"><div class="grow small"><span class="muted">Nächstes:</span> <b>${E(next.p.name)}</b> – ${E(leftText(next.st))}</div><span class="pill st-${next.st.status}">${STATUS_TXT[next.st.status]}</span></div>
+        <div class="bar"><i style="width:${Math.round(next.st.prog*100)}%;background:${STATUS_COL[next.st.status]}"></i></div>` : `<div class="small muted" style="margin-top:8px">Noch keine Fälligkeit – trage den letzten Service ein.</div>`}
+      <div class="small muted" style="margin-top:8px">${svcs.length} ${plural(svcs.length,'Service','Services')} · ${eur(total)} gesamt</div>
+    </div>`;
+  }).join('');
+  h += `<button class="btn block" data-act="add-vehicle">+ Weiteres Fahrzeug</button>`;
+  return h;
+}
+
+function renderVehicle(v){
+  const cur = currentKm(v), rate = kmRate(v);
+  const sts = vPlans(v.id).map(p => ({p, v, st:planStatus(p)}))
+    .sort((a, b) => STATUS_ORD[a.st.status] - STATUS_ORD[b.st.status] || (a.st.eff || '9').localeCompare(b.st.eff || '9'));
+  const svcs = vServices(v.id), total = svcs.reduce((a, s) => a + serviceTotal(s), 0);
+  const info = [['Marke / Modell', [v.make, v.model].filter(Boolean).join(' ')], ['Kennzeichen', v.plate], ['Baujahr', v.year], ['Kraftstoff', v.fuel],
+    ['FIN', v.vin], ['HSN / TSN', [v.hsn, v.tsn].filter(Boolean).join(' / ')], ['Motorcode', v.engine], ['Öl (Spezifikation)', v.oil], ['Reifengröße', v.tires]]
+    .filter(x => x[1]).map(x => `<dt>${x[0]}</dt><dd>${E(x[1])}</dd>`).join('');
+  let h = `<div class="card"><div class="row"><span class="dot" style="background:${v.color};width:14px;height:14px"></span><div class="grow big">${E(v.name)}</div>
+      <button class="btn sm" data-act="edit-vehicle" data-id="${v.id}">Bearbeiten</button></div>
+    <div class="row" style="margin-top:12px"><div class="grow"><div class="small muted">Aktueller km-Stand</div><div class="big num">${km(cur)}</div>
+      ${rate ? `<div class="small muted">Ø ${NF.format(Math.round(rate * 365))} km pro Jahr</div>` : ''}</div>
+      <button class="btn pri" data-act="km" data-id="${v.id}">km eintragen</button></div>
+    ${info ? `<dl class="kv" style="margin-top:14px">${info}</dl>` : ''}
+    ${v.notes ? `<p class="small muted" style="white-space:pre-wrap;margin:10px 0 0">${E(v.notes)}</p>` : ''}</div>`;
+
+  h += `<h2>Wartungsplan & Erinnerungen</h2><div class="card">`;
+  h += sts.length ? `<div class="list">${sts.map(x => `<div class="item tap" data-act="edit-plan" data-id="${x.p.id}">
+      <span class="dot" style="background:${STATUS_COL[x.st.status]}"></span>
+      <div class="grow"><div class="row"><b class="grow ellip">${E(x.p.name)}</b><span class="pill st-${x.st.status}">${STATUS_TXT[x.st.status]}</span></div>
+        <div class="small muted">${x.st.status === 'unknown' ? 'Noch kein Service – tippen, um den letzten Termin einzutragen' : 'Fällig: ' + E(dueText(x.st)) + ' · ' + E(leftText(x.st))}</div>
+        <div class="small muted">Intervall: ${[x.p.months ? x.p.months + ' Monate' : '', num(x.p.km) ? km(x.p.km) : ''].filter(Boolean).join(' / ') || '–'} · Erinnerung ${x.st.remindDays} ${plural(x.st.remindDays,'Tag','Tage')} vorher${x.st.remindDate && x.st.status !== 'unknown' ? ' (' + dt(x.st.remindDate) + ')' : ''}</div>
+        ${x.st.status !== 'unknown' ? `<div class="bar"><i style="width:${Math.round(x.st.prog*100)}%;background:${STATUS_COL[x.st.status]}"></i></div>` : ''}</div>
+      <button class="btn sm" data-act="ics-plan" data-id="${x.p.id}" title="In Kalender" ${x.st.eff ? '' : 'disabled'}>📅</button></div>`).join('')}</div>`
+    : `<p class="muted small">Noch keine Wartungspunkte.</p>`;
+  h += `<div class="btns"><button class="btn sm" data-act="add-plan" data-id="${v.id}">+ Wartungspunkt</button>
+    <button class="btn sm" data-act="ics-vehicle" data-id="${v.id}">📅 Alle in Kalender</button></div></div>`;
+
+  h += `<h2>Service-Historie · ${eur(total)}</h2>`;
+  h += svcs.length ? `<div class="card list">${svcs.map(serviceRow).join('')}</div>` :
+    `<div class="card empty"><p>Noch keine Services eingetragen.</p></div>`;
+  h += `<button class="btn pri block" data-act="add-service" data-id="${v.id}">+ Service eintragen</button>`;
+
+  const parts = aggregateParts().filter(p => p.vehicleId === v.id).slice(0, 8);
+  if (parts.length) h += `<h2>Verwendete Teile</h2><div class="card list">${parts.map(partRow).join('')}</div>`;
+  h += `<div class="btns" style="margin-top:22px"><button class="btn danger sm" data-act="del-vehicle" data-id="${v.id}">Fahrzeug löschen</button></div>`;
+  return h;
+}
+
+function serviceRow(s){
+  const v = vehicle(s.vehicleId);
+  return `<div class="item tap" data-act="open-service" data-id="${s.id}">
+    <span class="dot" style="background:${v ? v.color : COLORS[0]}"></span>
+    <div class="grow"><div class="ellip"><b>${E(serviceTitle(s))}</b></div>
+      <div class="small muted ellip">${dt(s.date)}${s.km != null ? ' · ' + km(s.km) : ''}${view.vehicleId ? '' : ' · ' + E(v ? v.name : '')}${s.workshop ? ' · ' + E(s.workshop) : ''}</div></div>
+    <div class="right num"><b>${eur(serviceTotal(s))}</b><div class="small muted">${s.parts.length} ${plural(s.parts.length,'Teil','Teile')}</div></div></div>`;
+}
+
+/* ---------- Ansicht: Services ---------- */
+function filteredServices(){
+  const q = view.serviceQuery.trim().toLowerCase();
+  return db.services.filter(s => view.serviceFilter === 'all' || s.vehicleId === view.serviceFilter).filter(s => {
+    if (!q) return true;
+    const hay = [serviceTitle(s), s.workshop, s.notes, ...s.parts.flatMap(p => [p.name, p.partNo, p.brand]), (vehicle(s.vehicleId) || {}).name].join(' ').toLowerCase();
+    return hay.includes(q);
+  }).sort(byDateDesc);
+}
+function serviceListHTML(){
+  const list = filteredServices();
+  if (!list.length) return `<div class="card empty"><p>${db.services.length ? 'Nichts gefunden.' : 'Noch keine Services eingetragen.<br>Tippe auf <b>+</b>, um den ersten einzutragen.'}</p></div>`;
+  const years = {};
+  list.forEach(s => { const y = (s.date || '').slice(0, 4) || '–'; (years[y] = years[y] || []).push(s); });
+  return Object.keys(years).sort().reverse().map(y => `<h2>${y} · ${eur(years[y].reduce((a, s) => a + serviceTotal(s), 0))}</h2>
+    <div class="card list">${years[y].map(serviceRow).join('')}</div>`).join('');
+}
+function vehicleChips(cur, act){
+  if (db.vehicles.length < 2) return '';
+  return `<div class="chips" style="margin-bottom:12px"><span class="chip ${cur === 'all' ? 'on' : ''}" data-act="${act}" data-id="all">Alle</span>
+    ${db.vehicles.map(v => `<span class="chip ${cur === v.id ? 'on' : ''}" data-act="${act}" data-id="${v.id}">${E(v.name)}</span>`).join('')}</div>`;
+}
+function renderServices(){
+  if (!db.vehicles.length) return renderHome();
+  if (view.serviceFilter !== 'all' && !vehicle(view.serviceFilter)) view.serviceFilter = 'all';
+  return vehicleChips(view.serviceFilter, 'svc-filter') +
+    `<input class="search" id="svcSearch" type="search" placeholder="Suchen: Öl, Artikelnummer, Werkstatt …" value="${E(view.serviceQuery)}">
+    <div id="svcList">${serviceListHTML()}</div>`;
+}
+
+/* ---------- Ansicht: Teile ---------- */
+function aggregateParts(){
+  const map = new Map();
+  [...db.services].sort((a, b) => (a.date || '').localeCompare(b.date || '')).forEach(s => s.parts.forEach(p => {
+    if (!p.name && !p.partNo) return;
+    const key = s.vehicleId + '|' + ((p.partNo || '').trim().toLowerCase() || (p.name || '').trim().toLowerCase());
+    const e = map.get(key) || {vehicleId:s.vehicleId, count:0, qty:0};
+    Object.assign(e, {name:p.name || e.name, partNo:p.partNo || e.partNo, brand:p.brand || e.brand, unit:p.unit || e.unit,
+      price:num(p.price) ?? e.price, date:s.date, serviceId:s.id});
+    e.count++; e.qty += num(p.qty) ?? 1;
+    map.set(key, e);
+  }));
+  return [...map.values()].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+}
+function partRow(p){
+  const v = vehicle(p.vehicleId);
+  return `<div class="item tap" data-act="open-service" data-id="${p.serviceId}">
+    <div class="grow"><div class="ellip"><b>${E(p.name || 'Teil')}</b>${p.brand ? ` <span class="muted">· ${E(p.brand)}</span>` : ''}</div>
+      <div class="small muted" style="margin-top:3px">${p.partNo ? `<code class="pn" data-act="copy" data-text="${E(p.partNo)}">${E(p.partNo)}</code> ` : ''}${view.vehicleId ? '' : E(v ? v.name : '') + ' · '}zuletzt ${dt(p.date)} · ${p.count}× verwendet</div></div>
+    <div class="right num"><b>${p.price != null ? eur(p.price) : '–'}</b><div class="small muted">pro ${E(p.unit || 'Stk')}</div></div></div>`;
+}
+function partsListHTML(){
+  const q = view.partsQuery.trim().toLowerCase();
+  const list = aggregateParts().filter(p => !q || [p.name, p.partNo, p.brand, (vehicle(p.vehicleId) || {}).name].join(' ').toLowerCase().includes(q));
+  if (!list.length) return `<div class="card empty"><p>${db.services.some(s => s.parts.length) ? 'Nichts gefunden.' : 'Hier erscheinen alle Teile mit Artikelnummer und letztem Preis, sobald du sie bei einem Service einträgst.'}</p></div>`;
+  return `<div class="card list">${list.map(partRow).join('')}</div><p class="small muted" style="margin:6px 4px">Tipp: Auf eine Artikelnummer tippen kopiert sie – praktisch zum Nachbestellen.</p>`;
+}
+function renderParts(){
+  return `<input class="search" id="partSearch" type="search" placeholder="Teil, Hersteller oder Artikelnummer suchen …" value="${E(view.partsQuery)}">
+    <div id="partList">${partsListHTML()}</div>`;
+}
+
+/* ---------- Ansicht: Kosten ---------- */
+function renderCosts(){
+  if (view.costVehicle !== 'all' && !vehicle(view.costVehicle)) view.costVehicle = 'all';
+  const list = db.services.filter(s => view.costVehicle === 'all' || s.vehicleId === view.costVehicle);
+  let h = vehicleChips(view.costVehicle, 'cost-filter');
+  if (!list.length) return h + `<div class="card empty"><div class="ico">📊</div><p>Noch keine Kosten – trage Services mit Preisen ein.</p></div>`;
+  const total = list.reduce((a, s) => a + serviceTotal(s), 0);
+  const partsT = list.reduce((a, s) => a + partsSum(s), 0);
+  const laborT = list.reduce((a, s) => a + (num(s.labor) || 0), 0);
+  const otherT = total - partsT - laborT;
+  const y = String(new Date().getFullYear());
+  const thisYear = list.filter(s => (s.date || '').startsWith(y)).reduce((a, s) => a + serviceTotal(s), 0);
+  const byYear = {}; list.forEach(s => { const k = (s.date || '').slice(0, 4); byYear[k] = (byYear[k] || 0) + serviceTotal(s); });
+  const yearKeys = Object.keys(byYear).sort();
+  const byType = {};
+  list.forEach(s => {
+    const names = s.planIds.map(id => plan(id)).filter(Boolean).map(p => p.name);
+    const k = names.length ? names[0] + (names.length > 1 ? ' + …' : '') : (s.title || 'Sonstiges');
+    byType[k] = (byType[k] || 0) + serviceTotal(s);
+  });
+  // Kosten pro km (nur bei einzelnem Fahrzeug sinnvoll)
+  let perKm = '';
+  if (view.costVehicle !== 'all'){
+    const pts = kmPoints(vehicle(view.costVehicle));
+    if (pts.length > 1){ const span = pts[pts.length - 1].km - pts[0].km; if (span > 500) perKm = eur(total / span * 100); }
+  }
+  h += `<div class="kpis"><div class="kpi"><div class="l">Gesamt</div><div class="v num">${eur(total)}</div></div>
+    <div class="kpi"><div class="l">Dieses Jahr</div><div class="v num">${eur(thisYear)}</div></div>
+    <div class="kpi"><div class="l">Ø pro Jahr</div><div class="v num">${eur(total / Math.max(1, yearKeys.length))}</div></div>
+    ${perKm ? `<div class="kpi"><div class="l">pro 100 km</div><div class="v num">${perKm}</div></div>` : `<div class="kpi"><div class="l">Services</div><div class="v num">${list.length}</div></div>`}</div>`;
+  const bars = (obj, keys) => { const max = Math.max(...keys.map(k => obj[k]), 1);
+    return keys.map(k => `<div class="hbar"><span class="lab ellip">${E(k)}</span><span class="trk"><i style="width:${Math.max(2, obj[k] / max * 100)}%"></i></span><span class="val">${eur(obj[k])}</span></div>`).join(''); };
+  h += `<h2>Pro Jahr</h2><div class="card">${bars(byYear, yearKeys.slice().reverse())}</div>`;
+  const tk = Object.keys(byType).sort((a, b) => byType[b] - byType[a]);
+  h += `<h2>Nach Art</h2><div class="card">${bars(byType, tk)}</div>`;
+  const split = {'Teile':partsT, 'Arbeitslohn':laborT}; if (otherT > 0.005) split['Sonstiges'] = otherT;
+  h += `<h2>Aufteilung</h2><div class="card">${bars(split, Object.keys(split))}</div>`;
+  return h;
+}
+
+/* ---------- Ansicht: Einstellungen ---------- */
+function renderSettings(){
+  const S = db.settings;
+  const nOK = 'Notification' in window;
+  const nState = !nOK ? 'Auf diesem Gerät nicht verfügbar (auf iPhone/iPad erst nach „Zum Home-Bildschirm“)' :
+    Notification.permission === 'denied' ? 'Blockiert – in den iOS-Einstellungen erlauben' : S.notify && Notification.permission === 'granted' ? 'Aktiv' : 'Aus';
+  return `<h2>Erinnerungen</h2><div class="card">
+    <div class="f"><label for="sRd">Standard: Wie viele Tage vorher erinnern?</label><input id="sRd" data-set="remindDays" inputmode="numeric" value="${S.remindDays}"><div class="hint">Gilt für alle Wartungspunkte, bei denen du nichts Eigenes eingestellt hast.</div></div>
+    <div class="f"><label for="sRk">Bei km-Intervallen: wie viele km vorher erinnern?</label><input id="sRk" data-set="remindKm" inputmode="numeric" value="${S.remindKm}"></div>
+    <div class="row" style="margin-top:6px"><div class="grow"><b>Mitteilungen</b><div class="small muted">${E(nState)}</div></div>
+      <button class="btn sm ${S.notify ? '' : 'pri'}" data-act="notify" ${nOK ? '' : 'disabled'}>${S.notify ? 'Ausschalten' : 'Einschalten'}</button></div>
+    <div class="row" style="margin-top:14px"><div class="grow"><b>Kalender-Erinnerungen</b><div class="small muted">Alle Fälligkeiten als Termine mit Alarm in deinen Kalender – erinnert dich auch, wenn die App geschlossen ist.</div></div>
+      <button class="btn sm" data-act="ics-all">📅 Exportieren</button></div>
+  </div>
+  <h2>Daten & Backup</h2><div class="card">
+    <p class="small muted" style="margin-top:0">${db.vehicles.length} ${plural(db.vehicles.length,'Fahrzeug','Fahrzeuge')}, ${db.services.length} Services, ${db.plans.length} Wartungspunkte. Die Daten liegen nur auf diesem Gerät – mach ab und zu ein Backup.</p>
+    <div class="btns"><button class="btn" data-act="export-json">Backup speichern</button><button class="btn" data-act="import-json">Backup laden</button><button class="btn" data-act="export-csv">Tabelle (CSV)</button></div>
+  </div>
+  <h2>App</h2><div class="card">
+    <div class="row"><div class="grow"><b>Version</b><div class="small muted" id="updMsg">${E(window.AS_VERSION || '?')}</div></div><button class="btn sm" data-act="check-update">Nach Updates suchen</button></div>
+    <div class="row" style="margin-top:12px"><div class="grow"><b>Als App installieren</b><div class="small muted">Auf iPhone/iPad zum Home-Bildschirm hinzufügen</div></div><button class="btn sm" data-act="install-help">Anleitung</button></div>
+  </div>
+  <div class="btns" style="margin-top:18px"><button class="btn danger sm" data-act="wipe">Alle Daten löschen</button></div>`;
+}
+async function toggleNotify(){
+  if (db.settings.notify){ db.settings.notify = false; save(); toast('Mitteilungen aus'); return; }
+  try {
+    const r = await Notification.requestPermission();
+    if (r !== 'granted'){ toast('Mitteilungen wurden nicht erlaubt'); render(); return; }
+    db.settings.notify = true; db.settings.notified = {}; save(); toast('Mitteilungen an');
+  } catch(e){ toast('Mitteilungen nicht möglich'); }
+}
+function installHelp(){
+  openSheet('Als App installieren', `<ol style="padding-left:20px;line-height:1.7">
+    <li>Diese Seite in <b>Safari</b> öffnen.</li><li>Unten (iPhone) bzw. oben (iPad) auf <b>Teilen</b> tippen.</li>
+    <li><b>„Zum Home-Bildschirm“</b> wählen und <b>Hinzufügen</b>.</li><li>Ab jetzt die App über das Symbol öffnen – sie läuft auch offline.</li></ol>
+    <p class="small muted">Mitteilungen funktionieren auf iPhone/iPad nur in der installierten App (ab iOS 16.4). Für Erinnerungen, die auch kommen, wenn die App zu ist, nutze die 📅-Kalender-Termine.</p>`, null, {saveText:''});
+}
+
+/* ---------- Sheet (Formular-Fenster) ---------- */
+function openSheet(title, body, onSave, opts = {}){
+  const bg = document.createElement('div'); bg.className = 'sheet-bg';
+  const saveText = opts.saveText ?? 'Sichern';
+  bg.innerHTML = `<div class="sheet" role="dialog" aria-label="${E(title)}"><div class="sh-h"><button class="cancel" type="button">${onSave ? 'Abbrechen' : 'Schließen'}</button><b>${E(title)}</b>
+    <button class="save" type="button" ${saveText ? '' : 'style="visibility:hidden"'}>${E(saveText || '.')}</button></div><form class="sh-b" novalidate>${body}<button type="submit" hidden></button></form></div>`;
+  document.body.appendChild(bg); document.body.style.overflow = 'hidden';
+  requestAnimationFrame(() => bg.classList.add('on'));
+  const close = () => { bg.classList.remove('on'); document.body.style.overflow = ''; setTimeout(() => bg.remove(), 200); };
+  const form = bg.querySelector('form');
+  const doSave = () => { if (!onSave) return close(); if (onSave(form) !== false) close(); };
+  bg.querySelector('.cancel').onclick = close;
+  bg.querySelector('.save').onclick = doSave;
+  form.onsubmit = e => { e.preventDefault(); doSave(); };
+  bg.addEventListener('click', e => { if (e.target === bg) close(); });
+  if (opts.onMount) opts.onMount(form, close);
+  return {form, close};
+}
+const val = (f, n) => (f.elements[n] ? f.elements[n].value.trim() : '');
+
+/* ---------- Fahrzeug anlegen / bearbeiten ---------- */
+function editVehicle(id){
+  const v = id ? vehicle(id) : {};
+  const isNew = !id;
+  const tpl = isNew ? `<fieldset><legend>Wartungsplan (kannst du später anpassen)</legend>
+      ${TEMPLATES.map((t, i) => `<label class="cb"><input type="checkbox" name="tpl" value="${i}" ${t.def ? 'checked' : ''}><span class="grow">${E(t.name)}</span><span class="small muted">${[t.months ? t.months + ' Mon.' : '', t.km ? km(t.km) : ''].filter(Boolean).join(' / ')}</span></label>`).join('')}
+    </fieldset>` : '';
+  openSheet(isNew ? 'Neues Fahrzeug' : 'Fahrzeug bearbeiten', `
+    <div class="f"><label>Name *</label><input name="name" value="${E(v.name)}" placeholder="z. B. Golf, Bulli, Mamas Auto" autocomplete="off"></div>
+    <div class="f2"><div class="f"><label>Marke</label><input name="make" value="${E(v.make)}" placeholder="VW"></div>
+      <div class="f"><label>Modell</label><input name="model" value="${E(v.model)}" placeholder="Golf 7 1.4 TSI"></div></div>
+    <div class="f2"><div class="f"><label>Kennzeichen</label><input name="plate" value="${E(v.plate)}" placeholder="AB-CD 123" autocapitalize="characters"></div>
+      <div class="f"><label>Baujahr</label><input name="year" value="${E(v.year)}" inputmode="numeric" placeholder="2016"></div></div>
+    <div class="f2"><div class="f"><label>Kraftstoff</label><select name="fuel"><option value="">–</option>${FUELS.map(f => `<option ${v.fuel === f ? 'selected' : ''}>${f}</option>`).join('')}</select></div>
+      <div class="f"><label>${isNew ? 'Aktueller km-Stand' : 'Farbe'}</label>${isNew ? `<input name="km" inputmode="numeric" placeholder="85.000">` :
+        `<select name="color">${COLORS.map((c, i) => `<option value="${c}" ${v.color === c ? 'selected' : ''}>Farbe ${i + 1}</option>`).join('')}</select>`}</div></div>
+    <fieldset><legend>Für die Teilesuche</legend>
+      <div class="f"><label>FIN (Fahrgestellnummer)</label><input name="vin" value="${E(v.vin)}" autocapitalize="characters"></div>
+      <div class="f3"><div class="f"><label>HSN</label><input name="hsn" value="${E(v.hsn)}" placeholder="0603"></div><div class="f"><label>TSN</label><input name="tsn" value="${E(v.tsn)}" placeholder="BJM"></div>
+        <div class="f"><label>Motorcode</label><input name="engine" value="${E(v.engine)}" placeholder="CZCA"></div></div>
+      <div class="f"><label>Öl (Spezifikation & Menge)</label><input name="oil" value="${E(v.oil)}" placeholder="5W-30, VW 504 00, 4,0 l"></div>
+      <div class="f"><label>Reifengröße</label><input name="tires" value="${E(v.tires)}" placeholder="205/55 R16 91V"></div></fieldset>
+    ${tpl}
+    <div class="f"><label>Notizen</label><textarea name="notes">${E(v.notes)}</textarea></div>`,
+  f => {
+    const name = val(f, 'name');
+    if (!name){ toast('Bitte einen Namen eingeben'); f.elements.name.focus(); return false; }
+    const data = {name, make:val(f,'make'), model:val(f,'model'), plate:val(f,'plate').toUpperCase(), year:val(f,'year'), fuel:val(f,'fuel'),
+      vin:val(f,'vin').toUpperCase(), hsn:val(f,'hsn'), tsn:val(f,'tsn').toUpperCase(), engine:val(f,'engine').toUpperCase(), oil:val(f,'oil'), tires:val(f,'tires'), notes:val(f,'notes')};
+    if (isNew){
+      const nv = Object.assign({id:uid(), color:COLORS[db.vehicles.length % COLORS.length], kmLog:[], created:todayISO()}, data);
+      const k = num(val(f, 'km')); if (k != null) nv.kmLog.push({date:todayISO(), km:k});
+      db.vehicles.push(nv);
+      [...f.querySelectorAll('input[name=tpl]:checked')].forEach(cb => { const t = TEMPLATES[+cb.value];
+        db.plans.push({id:uid(), vehicleId:nv.id, name:t.name, months:t.months || '', km:t.km || '', remindDays:'', lastDate:'', lastKm:null, dueOverride:'', notes:''}); });
+      view.tab = 'home'; view.vehicleId = nv.id;
+      save(); toast('Fahrzeug angelegt');
+    } else {
+      data.color = val(f, 'color') || v.color;
+      Object.assign(v, data); save(); toast('Gespeichert');
+    }
+  });
+}
+function deleteVehicle(id){
+  const v = vehicle(id), n = vServices(id).length;
+  if (!confirm(`„${v.name}“ wirklich löschen?\n\nDabei werden auch ${n} ${plural(n,'Service','Services')} und der Wartungsplan gelöscht. Das kann nicht rückgängig gemacht werden.`)) return;
+  db.vehicles = db.vehicles.filter(x => x.id !== id);
+  db.plans = db.plans.filter(p => p.vehicleId !== id);
+  db.services = db.services.filter(s => s.vehicleId !== id);
+  view.vehicleId = null; save(); toast('Fahrzeug gelöscht');
+}
+function editKm(id){
+  const v = vehicle(id), cur = currentKm(v);
+  openSheet('km-Stand eintragen', `<p class="muted small" style="margin-top:0">${E(v.name)} – bisher ${km(cur)}. Regelmäßig eintragen, dann kann die App berechnen, wann km-Intervalle (z. B. Ölwechsel alle 15.000 km) fällig werden.</p>
+    <div class="f2"><div class="f"><label>km-Stand</label><input name="km" inputmode="numeric" placeholder="${cur != null ? NF.format(cur) : ''}"></div>
+    <div class="f"><label>Datum</label><input name="date" type="date" value="${todayISO()}"></div></div>
+    ${v.kmLog.length ? `<h2>Verlauf</h2><div class="card list">${[...v.kmLog].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 10).map(e => `<div class="item"><span class="grow">${dt(e.date)}</span><b class="num">${km(e.km)}</b></div>`).join('')}</div>` : ''}`,
+  f => {
+    const k = num(val(f, 'km')), d = val(f, 'date');
+    if (k == null || k < 0){ toast('Bitte einen km-Stand eingeben'); return false; }
+    if (!validISO(d)){ toast('Bitte ein Datum wählen'); return false; }
+    if (cur != null && k < cur && !confirm(`Der neue Wert (${km(k)}) ist kleiner als der bisherige (${km(cur)}). Trotzdem speichern?`)) return false;
+    v.kmLog.push({date:d, km:k}); save(); toast('km-Stand gespeichert');
+  }, {onMount:f => setTimeout(() => f.elements.km.focus(), 250)});
+}
+
+/* ---------- Wartungspunkt (Intervall + Erinnerung) ---------- */
+function editPlan(id, vehicleId){
+  const p = id ? plan(id) : {vehicleId, name:'', months:'', km:'', remindDays:'', lastDate:'', lastKm:null, dueOverride:'', notes:''};
+  const v = vehicle(p.vehicleId), st = id ? planStatus(p) : null;
+  const hasSvc = st && st.last;
+  openSheet(id ? p.name : 'Neuer Wartungspunkt', `
+    ${st && st.status !== 'unknown' ? `<div class="card" style="background:var(--card2)"><div class="row"><div class="grow"><div class="small muted">Nächste Fälligkeit</div><b>${E(dueText(st))}</b>
+      <div class="small muted">${E(leftText(st))}</div></div><span class="pill st-${st.status}">${STATUS_TXT[st.status]}</span></div>
+      ${st.remindDate ? `<div class="small" style="margin-top:6px">🔔 Erinnerung am <b>${dt(st.remindDate)}</b></div>` : ''}</div>` : ''}
+    <div class="f"><label>Bezeichnung *</label><input name="name" value="${E(p.name)}" placeholder="z. B. Ölwechsel" list="tplNames"><datalist id="tplNames">${TEMPLATES.map(t => `<option value="${E(t.name)}">`).join('')}</datalist></div>
+    <div class="f2"><div class="f"><label>Alle … Monate</label><input name="months" inputmode="numeric" value="${E(p.months)}" placeholder="12"></div>
+      <div class="f"><label>oder alle … km</label><input name="km" inputmode="numeric" value="${num(p.km) ? NF.format(p.km) : ''}" placeholder="15.000"></div></div>
+    <div class="f"><label>Erinnerung – wie viele Tage vorher?</label><input name="remindDays" inputmode="numeric" value="${E(p.remindDays)}" placeholder="Standard: ${db.settings.remindDays} Tage">
+      <div class="hint">Leer lassen = Standard aus den Einstellungen (${db.settings.remindDays} Tage).</div></div>
+    <fieldset><legend>${hasSvc ? 'Fester Termin' : 'Startwert'}</legend>
+      ${hasSvc ? `<p class="small muted" style="margin-top:0">Zuletzt erledigt am ${dt(st.last.date)}${st.last.km != null ? ' bei ' + km(st.last.km) : ''} (aus der Service-Historie).</p>` :
+      `<p class="small muted" style="margin-top:0">Noch kein Service dazu eingetragen. Wann wurde es zuletzt gemacht?</p>
+      <div class="f2"><div class="f"><label>Zuletzt am</label><input name="lastDate" type="date" value="${E(p.lastDate)}"></div>
+        <div class="f"><label>bei km-Stand</label><input name="lastKm" inputmode="numeric" value="${p.lastKm != null ? NF.format(p.lastKm) : ''}"></div></div>`}
+      <div class="f"><label>Nächster Termin fest vorgegeben (optional)</label><input name="dueOverride" type="date" value="${E(p.dueOverride)}">
+        <div class="hint">z. B. TÜV laut Plakette. Wird beim nächsten passenden Service automatisch wieder entfernt.</div></div></fieldset>
+    <div class="f"><label>Notizen</label><textarea name="notes" placeholder="z. B. Werkstatt, Besonderheiten">${E(p.notes)}</textarea></div>
+    ${id ? `<div class="btns"><button type="button" class="btn" id="pIcs" ${st.eff ? '' : 'disabled'}>📅 In Kalender eintragen</button>
+      <button type="button" class="btn" id="pSvc">✓ Jetzt erledigt – Service eintragen</button>
+      <button type="button" class="btn danger" id="pDel">Löschen</button></div>` : ''}`,
+  f => {
+    const name = val(f, 'name');
+    if (!name){ toast('Bitte eine Bezeichnung eingeben'); return false; }
+    const months = num(val(f, 'months')), kmI = num(val(f, 'km')), rd = val(f, 'remindDays');
+    if (!months && !kmI && !val(f, 'dueOverride')){ toast('Bitte ein Intervall (Monate oder km) oder einen festen Termin angeben'); return false; }
+    if (rd !== '' && (num(rd) == null || num(rd) < 0)){ toast('Erinnerung: bitte Anzahl Tage eingeben'); return false; }
+    Object.assign(p, {name, months:months ? Math.round(months) : '', km:kmI ? Math.round(kmI) : '', remindDays:rd === '' ? '' : Math.round(num(rd)),
+      dueOverride:val(f, 'dueOverride'), notes:val(f, 'notes')});
+    if (f.elements.lastDate){ p.lastDate = val(f, 'lastDate'); p.lastKm = num(val(f, 'lastKm')); }
+    if (!id){ p.id = uid(); db.plans.push(p); }
+    delete db.settings.notified[p.id];
+    save(); toast('Gespeichert');
+  }, {onMount:(f, close) => {
+    if (!id) return;
+    f.querySelector('#pIcs').onclick = () => exportICS([p], 'Erinnerung-' + p.name);
+    f.querySelector('#pSvc').onclick = () => { close(); setTimeout(() => editService(null, {vehicleId:p.vehicleId, planIds:[p.id]}), 220); };
+    f.querySelector('#pDel').onclick = () => {
+      if (!confirm(`Wartungspunkt „${p.name}“ löschen? Eingetragene Services bleiben erhalten.`)) return;
+      db.plans = db.plans.filter(x => x.id !== p.id);
+      db.services.forEach(s => { s.planIds = s.planIds.filter(x => x !== p.id); });
+      close(); save(); toast('Gelöscht');
+    };
+  }});
+}
+
+/* ---------- Service anlegen / bearbeiten ---------- */
+function knownParts(){
+  const m = new Map();
+  [...db.services].sort((a, b) => (a.date || '').localeCompare(b.date || '')).forEach(s => s.parts.forEach(p => { if (p.name) m.set(p.name.trim().toLowerCase(), p); }));
+  return m;
+}
+function editService(id, preset = {}){
+  const isNew = !id;
+  const src = id ? service(id) : null;
+  const s = src ? JSON.parse(JSON.stringify(src)) : Object.assign({vehicleId:null, date:todayISO(), km:null, planIds:[], title:'', workshop:'', labor:'', other:'', parts:[], notes:''}, JSON.parse(JSON.stringify(preset)));
+  if (!s.vehicleId || !vehicle(s.vehicleId)) s.vehicleId = db.vehicles[0].id;
+  if (isNew && s.km == null) s.km = currentKm(vehicle(s.vehicleId));
+  const known = knownParts();
+  const kp = [...known.values()];
+
+  const partHTML = (p, i) => `<div class="prow" data-i="${i}"><button type="button" class="x" data-del="${i}" aria-label="Teil entfernen">×</button>
+    <div class="f" style="margin-right:30px"><label>Bezeichnung</label><input data-k="name" value="${E(p.name)}" list="kpNames" placeholder="z. B. Motoröl 5W-30" autocomplete="off"></div>
+    <div class="f2"><div class="f"><label>Hersteller</label><input data-k="brand" value="${E(p.brand)}" placeholder="Castrol"></div>
+      <div class="f"><label>Artikelnummer</label><input data-k="partNo" value="${E(p.partNo)}" placeholder="15669E" autocapitalize="characters" autocomplete="off"></div></div>
+    <div class="f3"><div class="f"><label>Menge</label><input data-k="qty" value="${E(numIn(p.qty))}" inputmode="decimal" placeholder="1"></div>
+      <div class="f"><label>Einheit</label><select data-k="unit">${UNITS.map(u => `<option value="${u}" ${(p.unit || 'Stk') === u ? 'selected' : ''}>${u === 'l' ? 'Liter' : u}</option>`).join('')}</select></div>
+      <div class="f"><label>Preis/Einheit €</label><input data-k="price" value="${E(numIn(p.price))}" inputmode="decimal" placeholder="0,00"></div></div>
+    <div class="sum">= <b>${eur((num(p.qty) ?? 1) * (num(p.price) || 0))}</b></div></div>`;
+
+  const planChips = () => vPlans(s.vehicleId).map(p => `<span class="chip ${s.planIds.includes(p.id) ? 'on' : ''}" data-plan="${p.id}">${E(p.name)}</span>`).join('') ||
+    '<span class="small muted">Für dieses Fahrzeug gibt es noch keine Wartungspunkte.</span>';
+
+  openSheet(isNew ? 'Service eintragen' : 'Service bearbeiten', `
+    <div class="f"><label>Fahrzeug</label><select name="vehicleId">${db.vehicles.map(v => `<option value="${v.id}" ${v.id === s.vehicleId ? 'selected' : ''}>${E(v.name)}</option>`).join('')}</select></div>
+    <div class="f2"><div class="f"><label>Datum *</label><input name="date" type="date" value="${E(s.date)}"></div>
+      <div class="f"><label>km-Stand</label><input name="km" inputmode="numeric" value="${s.km != null ? NF.format(s.km) : ''}"></div></div>
+    <div class="f"><label>Was wurde gemacht? (setzt die Erinnerung neu)</label><div class="chips" id="planChips">${planChips()}</div></div>
+    <div class="f"><label>Titel / Beschreibung</label><input name="title" value="${E(s.title)}" placeholder="optional – sonst aus der Auswahl oben"></div>
+    <div class="f"><label>Werkstatt</label><input name="workshop" value="${E(s.workshop)}" placeholder="z. B. Selbst gemacht, ATU, Autohaus Müller" list="wsNames">
+      <datalist id="wsNames">${[...new Set(db.services.map(x => x.workshop).filter(Boolean))].map(w => `<option value="${E(w)}">`).join('')}</datalist></div>
+    <h2>Teile & Material</h2>
+    <datalist id="kpNames">${kp.map(p => `<option value="${E(p.name)}">${E([p.brand, p.partNo].filter(Boolean).join(' · '))}</option>`).join('')}</datalist>
+    <div id="partRows"></div>
+    <button type="button" class="btn block" id="addPart">+ Teil hinzufügen</button>
+    <h2>Weitere Kosten</h2>
+    <div class="f2"><div class="f"><label>Arbeitslohn €</label><input name="labor" inputmode="decimal" value="${E(numIn(s.labor))}" placeholder="0,00"></div>
+      <div class="f"><label>Sonstiges € (Entsorgung …)</label><input name="other" inputmode="decimal" value="${E(numIn(s.other))}" placeholder="0,00"></div></div>
+    <div class="total"><span>Gesamt</span><span id="sumAll" class="num">${eur(serviceTotal(s))}</span></div>
+    <div class="f"><label>Notizen</label><textarea name="notes" placeholder="z. B. Bremsbeläge vorne noch 5 mm">${E(s.notes)}</textarea></div>`,
+  f => {
+    const date = val(f, 'date');
+    if (!validISO(date)){ toast('Bitte ein Datum wählen'); return false; }
+    readParts(f);
+    s.vehicleId = val(f, 'vehicleId'); s.date = date; s.km = num(val(f, 'km'));
+    s.title = val(f, 'title'); s.workshop = val(f, 'workshop'); s.labor = num(val(f, 'labor')); s.other = num(val(f, 'other')); s.notes = val(f, 'notes');
+    s.parts = s.parts.filter(p => p.name || p.partNo || num(p.price));
+    s.parts.forEach(p => { p.qty = num(p.qty); p.price = num(p.price); });
+    s.planIds = s.planIds.filter(pid => { const p = plan(pid); return p && p.vehicleId === s.vehicleId; });
+    if (!s.planIds.length && !s.title && !s.parts.length){ toast('Bitte auswählen, was gemacht wurde, oder einen Titel eingeben'); return false; }
+    // Fester Termin wird durch den neuen Service erledigt
+    s.planIds.forEach(pid => { const p = plan(pid); if (p.dueOverride && p.dueOverride <= addMonths(date, 1)) p.dueOverride = ''; delete db.settings.notified[pid]; });
+    if (isNew){ s.id = uid(); s.created = new Date().toISOString(); db.services.push(s); }
+    else Object.assign(src, s);
+    save(); toast(isNew ? 'Service gespeichert' : 'Änderungen gespeichert');
+  }, {onMount:f => {
+    const rows = f.querySelector('#partRows');
+    const drawRows = () => { rows.innerHTML = s.parts.map(partHTML).join(''); };
+    const updSum = () => { readParts(f); f.querySelector('#sumAll').textContent = eur(serviceTotal(Object.assign({}, s, {labor:val(f,'labor'), other:val(f,'other')})));
+      rows.querySelectorAll('.prow').forEach(r => { const p = s.parts[+r.dataset.i]; r.querySelector('.sum b').textContent = eur((num(p.qty) ?? 1) * (num(p.price) || 0)); }); };
+    drawRows();
+    f.querySelector('#addPart').onclick = () => { readParts(f); s.parts.push({name:'', brand:'', partNo:'', qty:1, unit:'Stk', price:''}); drawRows(); rows.lastElementChild.querySelector('input').focus(); };
+    rows.addEventListener('click', e => { const d = e.target.closest('[data-del]'); if (!d) return; readParts(f); s.parts.splice(+d.dataset.del, 1); drawRows(); updSum(); });
+    rows.addEventListener('input', updSum);
+    rows.addEventListener('change', e => {
+      // Bekanntes Teil gewählt → Hersteller, Artikelnummer, Einheit und letzten Preis übernehmen
+      if (e.target.dataset.k !== 'name') return;
+      const k = known.get(e.target.value.trim().toLowerCase()); if (!k) return;
+      const r = e.target.closest('.prow');
+      ['brand', 'partNo', 'price'].forEach(key => { const inp = r.querySelector(`[data-k=${key}]`); if (!inp.value && k[key] != null) inp.value = key === 'price' ? numIn(k[key]) : k[key]; });
+      if (k.unit) r.querySelector('[data-k=unit]').value = k.unit;
+      const q = r.querySelector('[data-k=qty]'); if ((!q.value || q.value === '1') && k.qty != null) q.value = numIn(k.qty);
+      updSum();
+    });
+    f.elements.labor.addEventListener('input', updSum); f.elements.other.addEventListener('input', updSum);
+    f.querySelector('#planChips').addEventListener('click', e => {
+      const c = e.target.closest('[data-plan]'); if (!c) return;
+      const pid = c.dataset.plan; s.planIds = s.planIds.includes(pid) ? s.planIds.filter(x => x !== pid) : [...s.planIds, pid];
+      c.classList.toggle('on');
+    });
+    f.elements.vehicleId.addEventListener('change', () => {
+      s.vehicleId = f.elements.vehicleId.value; s.planIds = [];
+      f.querySelector('#planChips').innerHTML = planChips();
+      if (isNew){ const c = currentKm(vehicle(s.vehicleId)); f.elements.km.value = c != null ? NF.format(c) : ''; }
+    });
+    function readParts(form){ form.querySelectorAll('#partRows .prow').forEach(r => { const p = s.parts[+r.dataset.i]; if (!p) return;
+      r.querySelectorAll('[data-k]').forEach(inp => { p[inp.dataset.k] = inp.value.trim(); }); }); }
+    f._readParts = readParts;
+  }});
+  function readParts(form){ if (form._readParts) form._readParts(form); }
+}
+
+function showService(id){
+  const s = service(id); if (!s) return;
+  const v = vehicle(s.vehicleId);
+  const names = s.planIds.map(pid => plan(pid)).filter(Boolean).map(p => p.name);
+  const {close} = openSheet(serviceTitle(s), `
+    <div class="card"><dl class="kv"><dt>Fahrzeug</dt><dd>${E(v ? v.name : '–')}</dd><dt>Datum</dt><dd>${dt(s.date)}</dd><dt>km-Stand</dt><dd>${km(s.km)}</dd>
+      ${s.workshop ? `<dt>Werkstatt</dt><dd>${E(s.workshop)}</dd>` : ''}${names.length ? `<dt>Erledigt</dt><dd>${E(names.join(', '))}</dd>` : ''}</dl></div>
+    ${s.parts.length ? `<h2>Teile & Material</h2><div class="card" style="overflow-x:auto"><table class="parts"><thead><tr><th>Teil</th><th>Art.-Nr.</th><th class="r">Menge</th><th class="r">Preis</th></tr></thead><tbody>
+      ${s.parts.map(p => `<tr><td><b>${E(p.name || '–')}</b>${p.brand ? `<div class="small muted">${E(p.brand)}</div>` : ''}</td>
+        <td>${p.partNo ? `<code class="pn" data-copy="${E(p.partNo)}">${E(p.partNo)}</code>` : '–'}</td>
+        <td class="r num">${NF.format(num(p.qty) ?? 1)} ${E(p.unit || 'Stk')}</td>
+        <td class="r num">${eur((num(p.qty) ?? 1) * (num(p.price) || 0))}${(num(p.qty) ?? 1) !== 1 ? `<div class="small muted">à ${eur(p.price)}</div>` : ''}</td></tr>`).join('')}
+      </tbody></table></div>` : ''}
+    <div class="card"><div class="row"><span class="grow muted">Teile</span><span class="num">${eur(partsSum(s))}</span></div>
+      <div class="row" style="margin-top:4px"><span class="grow muted">Arbeitslohn</span><span class="num">${eur(s.labor)}</span></div>
+      ${num(s.other) ? `<div class="row" style="margin-top:4px"><span class="grow muted">Sonstiges</span><span class="num">${eur(s.other)}</span></div>` : ''}
+      <div class="total" style="padding-bottom:0"><span>Gesamt</span><span class="num">${eur(serviceTotal(s))}</span></div></div>
+    ${s.notes ? `<h2>Notizen</h2><div class="card" style="white-space:pre-wrap">${E(s.notes)}</div>` : ''}
+    <div class="btns"><button type="button" class="btn pri" id="svEdit">Bearbeiten</button><button type="button" class="btn" id="svCopy">Als Vorlage für neuen Service</button>
+      <button type="button" class="btn danger" id="svDel">Löschen</button></div>`, null, {saveText:'', onMount:(f, close) => {
+    f.querySelectorAll('[data-copy]').forEach(c => c.onclick = () => copyText(c.dataset.copy));
+    f.querySelector('#svEdit').onclick = () => { close(); setTimeout(() => editService(id), 220); };
+    f.querySelector('#svCopy').onclick = () => { close(); setTimeout(() => editService(null, {vehicleId:s.vehicleId, planIds:s.planIds, title:s.title, workshop:s.workshop, labor:s.labor, other:s.other,
+      parts:s.parts.map(p => Object.assign({}, p)), notes:''}), 220); };
+    f.querySelector('#svDel').onclick = () => {
+      if (!confirm('Diesen Service wirklich löschen?')) return;
+      db.services = db.services.filter(x => x.id !== id); close(); save(); toast('Service gelöscht');
+    };
+  }});
+}
+
+/* ---------- Backup / Export ---------- */
+function exportJSON(){
+  const text = JSON.stringify(Object.assign({app:'auto-service-app', exported:new Date().toISOString()}, db), null, 2);
+  shareOrDownload(text, `Auto-Service-Backup-${todayISO()}.json`, 'application/json');
+}
+function exportCSV(){
+  const q = x => { const s = String(x ?? ''); return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const n2 = x => x == null || x === '' ? '' : String((+x).toFixed(2)).replace('.', ',');
+  const rows = [['Fahrzeug','Kennzeichen','Datum','km','Service','Werkstatt','Teil','Hersteller','Artikelnummer','Menge','Einheit','Einzelpreis','Positionspreis','Arbeitslohn','Sonstiges','Gesamt Service','Notizen']];
+  [...db.services].sort((a, b) => (a.date || '').localeCompare(b.date || '')).forEach(s => {
+    const v = vehicle(s.vehicleId) || {};
+    const base = [v.name, v.plate, dt(s.date), s.km ?? '', serviceTitle(s), s.workshop];
+    const tail = [n2(s.labor), n2(s.other), n2(serviceTotal(s)), s.notes];
+    if (!s.parts.length) rows.push([...base, '', '', '', '', '', '', '', ...tail]);
+    s.parts.forEach((p, i) => rows.push([...base, p.name, p.brand, p.partNo, String(num(p.qty) ?? 1).replace('.', ','), p.unit || 'Stk', n2(p.price), n2((num(p.qty) ?? 1) * (num(p.price) || 0)),
+      ...(i === 0 ? tail : ['', '', '', ''])]));
+  });
+  const csv = '\ufeff' + rows.map(r => r.map(q).join(';')).join('\r\n');
+  shareOrDownload(csv, `Auto-Service-${todayISO()}.csv`, 'text/csv');
+}
+$('#importFile').addEventListener('change', e => {
+  const file = e.target.files[0]; e.target.value = ''; if (!file) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    try {
+      const d = JSON.parse(rd.result);
+      if (!d || !Array.isArray(d.vehicles) || !Array.isArray(d.services)) throw new Error('Keine Auto-Service-Sicherung');
+      const n = normalize(d);
+      if (!confirm(`Backup laden?\n\n${n.vehicles.length} Fahrzeuge, ${n.services.length} Services.\nDie aktuellen Daten auf diesem Gerät werden dabei ersetzt.`)) return;
+      db = n; view.vehicleId = null; save(); toast('Backup geladen');
+    } catch(err){ alert('Datei konnte nicht gelesen werden: ' + err.message); }
+  };
+  rd.readAsText(file);
+});
+function wipeAll(){
+  if (!confirm('Wirklich ALLE Fahrzeuge, Services und Einstellungen löschen? Das kann nicht rückgängig gemacht werden.\n\nTipp: Vorher ein Backup speichern.')) return;
+  db = emptyDB(); view = Object.assign(view, {vehicleId:null, tab:'home', serviceFilter:'all', costVehicle:'all'}); save(); toast('Alle Daten gelöscht');
+}
+
+render();
+runReminders();
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible'){ render(); runReminders(); } });
+</script>
+
+<div id="upd" role="dialog" aria-live="polite">
+  <div><b>Update verfügbar</b> <span id="upd-v"></span></div>
+  <p id="upd-n"></p>
+  <div class="r"><button class="later" id="upd-later">Später</button><button class="go" id="upd-go">App aktualisieren</button></div>
+</div>
+<script>
+(function(){
+  var APP_VERSION = '1.0.0';   // bei jeder Änderung erhöhen – und in version.json gleich setzen
+  window.AS_VERSION = APP_VERSION;
+  var m = document.getElementById('updMsg'); if (m) m.textContent = APP_VERSION;
+  var box = document.getElementById('upd');
+  function check(manual){
+    fetch('version.json?t=' + Date.now(), {cache:'no-store'})
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(v){
+        var msg = document.getElementById('updMsg');
+        if (!v || !v.version || v.version === APP_VERSION){ if (manual && msg) msg.textContent = APP_VERSION + ' – du hast die neueste Version.'; return; }
+        if (!manual && sessionStorage.getItem('upd-later') === v.version) return;
+        if (msg) msg.textContent = APP_VERSION + ' – Version ' + v.version + ' ist verfügbar!';
+        document.getElementById('upd-v').textContent = 'Version ' + v.version;
+        document.getElementById('upd-n').textContent = v.notes || 'Neue Funktionen und Verbesserungen.';
+        box.classList.add('on');
+      }).catch(function(){ var msg = document.getElementById('updMsg'); if (manual && msg) msg.textContent = APP_VERSION + ' – keine Verbindung.'; });
+  }
+  document.getElementById('upd-later').onclick = function(){
+    box.classList.remove('on');
+    try { sessionStorage.setItem('upd-later', (document.getElementById('upd-v').textContent || '').replace('Version ', '')); } catch(e){}
+  };
+  document.getElementById('upd-go').onclick = function(){
+    var btn = this; btn.disabled = true; btn.textContent = 'Wird aktualisiert …';
+    if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) { location.reload(); return; }
+    navigator.serviceWorker.ready.then(function(reg){
+      var ch = new MessageChannel();
+      ch.port1.onmessage = function(e){
+        if (e.data === 'ok') location.reload();
+        else { btn.disabled = false; btn.textContent = 'Nochmal versuchen'; }
+      };
+      reg.active.postMessage('update', [ch.port2]);
+    }).catch(function(){ location.reload(); });
+  };
+  window.asCheckUpdate = function(manual){ try { sessionStorage.removeItem('upd-later'); } catch(e){} check(manual); };
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(){});
+  window.addEventListener('load', function(){ check(false); });
+  document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'visible') check(false); });
+})();
+</script>
+</body>
+</html>
